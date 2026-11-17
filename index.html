@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tréninkový deník</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trénink">
+<meta name="theme-color" content="#07070c">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAAdUlEQVR42u3BMQEAAADCoPVPbQsvoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4G3xzAAG1XkYyAAAAAElFTkSuQmCC">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAAdUlEQVR42u3BMQEAAADCoPVPbQsvoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4G3xzAAG1XkYyAAAAAElFTkSuQmCC">
+<style>
+:root{
+  /* layout: one column phone app, sticky workout header, bottom tab bar, bottom sheets */
+  --bg:#07070c; --s1:#101018; --s2:#181824; --s3:#232335; --line:#2b2b40;
+  --tx:#cdc9df; --dim:#7f7b98; --hot:#ff6b3d; --vio:#8f6bff; --ok:#2fd6a6; --warn:#ffb547; --bad:#ff5470;
+  --disp:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
+  --body:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
+  --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 var(--body);-webkit-text-size-adjust:100%}
+body{min-height:100vh;overscroll-behavior-y:none;
+  background:radial-gradient(90% 40% at 100% 0,rgba(143,107,255,.20),transparent 70%),radial-gradient(80% 35% at 0 8%,rgba(255,107,61,.13),transparent 70%),var(--bg);background-attachment:fixed}
+button,input,select,textarea{font:inherit;color:inherit}
+button{border:0;background:none;padding:0;cursor:pointer;text-align:inherit}
+button:focus-visible,input:focus-visible,a:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--vio);outline-offset:2px}
+h1,h2,h3{font-family:var(--disp);margin:0;text-wrap:balance}
+h1{font-size:30px;font-weight:800;letter-spacing:-.02em;color:#e4e0f2}
+h2{font-size:20px;font-weight:700;color:#e4e0f2}
+p{margin:0}
+a{color:var(--vio)}
+#cap{position:fixed;top:0;left:0;right:0;height:var(--st);background:var(--bg);z-index:30}
+#view{max-width:560px;margin:0 auto;padding:calc(var(--st) + 18px) 16px calc(var(--sb) + 96px);display:flex;flex-direction:column;gap:14px}
+.eyebrow{font:600 12px var(--disp);letter-spacing:.14em;text-transform:uppercase;color:var(--hot)}
+.sub{color:var(--dim);font-size:14px}
+.card{background:linear-gradient(180deg,var(--s2),var(--s1));border:1px solid var(--line);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.card.glow{border-color:rgba(255,107,61,.45);box-shadow:0 0 0 1px rgba(255,107,61,.12),0 18px 40px -22px rgba(255,107,61,.6)}
+.row{display:flex;align-items:center;gap:10px}
+.row.wrap{flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:14px;font:700 16px var(--disp);background:var(--s3);color:var(--tx);border:1px solid var(--line);text-align:center}
+.btn.hot{background:linear-gradient(135deg,#ff7a45,#ff4f6d);color:#170806;border:0}
+.btn.vio{background:linear-gradient(135deg,#9a7bff,#6f4bff);color:#0d0822;border:0}
+.btn.ghost{background:transparent}
+.btn.bad{background:rgba(255,84,112,.14);color:var(--bad);border-color:rgba(255,84,112,.4)}
+.btn.sm{min-height:38px;padding:0 12px;font-size:14px;border-radius:11px}
+.btn:active{transform:scale(.98)}
+.btn[disabled]{opacity:.4}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:12px}
+.stat b{display:block;font:800 24px var(--disp);color:#e4e0f2;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--dim)}
+.empty{color:var(--dim);text-align:center;padding:18px 8px;font-size:15px}
+.note{font-size:13px;color:var(--dim)}
+.pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:99px;font:600 12px var(--disp);border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.pill.ok{color:var(--ok);border-color:rgba(47,214,166,.4);background:rgba(47,214,166,.1)}
+.pill.warn{color:var(--warn);border-color:rgba(255,181,71,.4);background:rgba(255,181,71,.1)}
+.pill.bad{color:var(--bad);border-color:rgba(255,84,112,.4);background:rgba(255,84,112,.1)}
+.pill.vio{color:#b7a2ff;border-color:rgba(143,107,255,.45);background:rgba(143,107,255,.12)}
+/* tab bar */
+#tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:center;padding:8px 10px calc(var(--sb) + 8px);background:rgba(10,10,16,.82);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+#tabs div{display:flex;width:100%;max-width:560px}
+#tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font:600 11px var(--disp);color:var(--dim);border-radius:12px}
+#tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#tabs button.on{color:var(--hot)}
+/* workout */
+.wh{position:sticky;top:var(--st);z-index:10;margin:-18px -16px 0;padding:12px 16px;background:rgba(10,10,16,.9);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+#timer{font:800 40px/1 var(--disp);font-variant-numeric:tabular-nums;color:#f1edff;letter-spacing:-.02em}
+.bar{height:6px;border-radius:9px;background:var(--s3);overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--vio),var(--hot));border-radius:9px;transition:width .3s}
+.rest{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--dim);min-height:34px}
+.rest b{font:800 18px var(--disp);font-variant-numeric:tabular-nums;color:var(--warn);min-width:52px}
+.rest.go b{color:var(--ok)}
+.rest.idle b{display:none}
+.rest .btn{min-height:32px;padding:0 10px;font-size:13px}
+.rest.idle .btn{display:none}
+.item-h{display:flex;align-items:flex-start;gap:8px}
+.item-h .nm{flex:1;font:700 17px var(--disp);color:#e4e0f2;text-align:left}
+.item-h .nm small{display:block;font:500 12px var(--body);color:var(--dim)}
+.ic{width:34px;height:34px;border-radius:10px;background:var(--s3);color:var(--dim);display:grid;place-items:center;font-size:16px;flex:none}
+.sets{display:flex;flex-direction:column;gap:6px}
+.set,.sethead{display:grid;align-items:center;gap:6px}
+.set.w,.sethead.w{grid-template-columns:20px minmax(54px,1fr) 54px 60px 44px}
+.set.p,.sethead.p{grid-template-columns:20px 1fr 1fr}
+.sethead{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+.set .n{font:700 13px var(--disp);color:var(--dim);text-align:center}
+.set .pl{font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+.num{width:100%;height:42px;border-radius:11px;border:1px solid var(--line);background:var(--bg);text-align:center;font:700 16px var(--disp);font-variant-numeric:tabular-nums;color:#e4e0f2;padding:0 4px}
+.chk{height:42px;border-radius:11px;border:1px solid var(--line);background:var(--s3);color:var(--dim);display:grid;place-items:center;font-size:18px;font-weight:800}
+.set.done .chk{background:var(--ok);border-color:var(--ok);color:#04231a}
+.set.done .num{border-color:rgba(47,214,166,.45);color:var(--ok)}
+.warm ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:3px;font-size:15px}
+.warm.done{opacity:.55}
+/* inputs */
+.txt{width:100%;min-height:46px;border-radius:13px;border:1px solid var(--line);background:var(--bg);padding:10px 14px;color:#e4e0f2}
+textarea.txt{min-height:90px;resize:vertical}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;margin:0 -16px;padding-left:16px;padding-right:16px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:7px 13px;border-radius:99px;border:1px solid var(--line);background:var(--s1);font:600 13px var(--disp);color:var(--dim);white-space:nowrap}
+.chip.on{background:rgba(143,107,255,.18);border-color:var(--vio);color:#c9bbff}
+.chip.hoton.on{background:rgba(255,107,61,.16);border-color:var(--hot);color:#ffab90}
+h3.cat{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:14px 2px 6px;display:flex;justify-content:space-between}
+h3.cat span{font-weight:500}
+.ex{display:flex;align-items:stretch;gap:8px;margin-bottom:6px}
+.ex-main{flex:1;min-width:0;background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:5px}
+.ex-main b{font:600 15px var(--disp);color:#dcd8ec}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tags i{font:600 11px var(--disp);font-style:normal;padding:1px 8px;border-radius:99px;border:1px solid var(--line);color:var(--dim)}
+.tags .eqS{color:#8fb8ff;border-color:rgba(143,184,255,.35)}
+.tags .eqV{color:var(--ok);border-color:rgba(47,214,166,.35)}
+.tags .eqN{color:#c9bbff;border-color:rgba(143,107,255,.4)}
+.tags .top{color:var(--hot);border-color:rgba(255,107,61,.45)}
+.ex .add{width:48px;border-radius:14px;background:linear-gradient(135deg,#9a7bff,#6f4bff);color:#0d0822;font:800 24px var(--disp);display:grid;place-items:center}
+/* sheet */
+#sheet{display:none}
+#sheet.on{display:block;position:fixed;inset:0;z-index:40}
+.sh-bg{position:absolute;inset:0;background:rgba(3,3,6,.72)}
+.sh-body{position:absolute;left:0;right:0;bottom:0;max-height:calc(100% - var(--st) - 24px);overflow-y:auto;background:var(--s1);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;padding:20px 16px calc(var(--sb) + 20px);display:flex;flex-direction:column;gap:12px;max-width:560px;margin:0 auto;-webkit-overflow-scrolling:touch}
+.sh-body::before{content:"";width:40px;height:4px;border-radius:4px;background:var(--line);align-self:center;margin-top:-8px;flex:none}
+.mm{display:flex;justify-content:center;gap:18px;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:12px}
+.mm figure{margin:0;text-align:center;font-size:11px;color:var(--dim)}
+.mm svg{width:96px;height:192px;display:block}
+.legend{display:flex;gap:14px;justify-content:center;font-size:12px;color:var(--dim)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+.how{font-size:15px;line-height:1.55}
+.errbox{border-left:3px solid var(--warn);padding:6px 10px;background:rgba(255,181,71,.07);border-radius:0 10px 10px 0;font-size:14px}
+.errbox b{color:var(--warn)}
+/* history */
+.hrow{display:grid;grid-template-columns:20px 1fr 1fr auto;gap:8px;align-items:center;font-size:14px;font-variant-numeric:tabular-nums;padding:5px 0;border-top:1px solid var(--line)}
+.hrow.head{border:0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim)}
+.hrow .n{color:var(--dim);text-align:center}
+.month{font:700 13px var(--disp);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:6px 2px 0}
+/* guide */
+.q{display:flex;flex-direction:column;gap:8px}
+.q b{font:700 16px var(--disp);color:#e4e0f2}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.g h2{margin-top:6px}
+.g ul,.g ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:15px}
+.g .big{font:800 22px var(--disp);color:#e4e0f2}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kv div{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.kv span{display:block;font-size:12px;color:var(--dim)}
+.kv b{font:700 16px var(--disp);color:#e4e0f2}
+.day{border-left:3px solid var(--vio);padding-left:12px}
+.day b{font:700 15px var(--disp);color:#c9bbff}
+#toast{position:fixed;left:50%;bottom:calc(var(--sb) + 92px);transform:translateX(-50%);background:#2a2440;border:1px solid var(--vio);color:#e4e0f2;padding:9px 16px;border-radius:99px;font:600 14px var(--disp);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;max-width:88%;text-align:center}
+#toast.on{opacity:1}
+label.chkrow{display:flex;gap:10px;align-items:center;font-size:15px}
+label.chkrow input{width:22px;height:22px;accent-color:var(--hot)}
+select.txt{-webkit-appearance:none;appearance:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="cap"></div>
+<main id="view"></main>
+<nav id="tabs"><div id="tabsin"></div></nav>
+<div id="sheet"></div>
+<div id="toast" role="status"></div>
+<input type="file" id="file" accept="application/json,.json,text/plain" hidden>
+<script>
+"use strict";
+/* ---------- data: exercises ---------- */
+const CATS=[['hrudnik','Hrudník',['chest']],['zada','Záda',['lats','traps']],['ramena','Ramena',['shoulders']],['biceps','Biceps',['biceps']],['triceps','Triceps',['triceps']],['predlokti','Předloktí',['forearms']],['core','Břicho a střed těla',['abs','obliques']],['hyzde','Hýždě',['glutes']],['kvadr','Přední stehna',['quads']],['hams','Zadní stehna',['hams']],['lytka','Lýtka',['calves']],['telo','Celé tělo a kondice',['quads','glutes','abs','shoulders']]];
+const CATN=Object.fromEntries(CATS.map(c=>[c[0],c[1]])),CATM=Object.fromEntries(CATS.map(c=>[c[0],c[2]]));
+const EQS={S:'stroj / kladka',V:'vlastní váha',N:'činky a náčiní'};
+/* id|název|kategorie|vybavení|příznaky (*=nejúčinnější, t=sekundy, m=minuty)|svaly (hlavní/pomocné nebo jen pomocné)|provedení|častá chyba */
+const RAW=`
+h1|Bench press s velkou činkou|hrudnik|N|*|triceps,shoulders|Lehni si na lavici tak, abys měl oči pod osou. Stáhni lopatky k sobě a dolů, chodidla opři pevně o zem. Činku spouštěj pomalu na spodní část hrudníku s lokty asi 45–70° od těla a vytlač ji zpět nad ramena.|Odrážení činky od hrudníku a zvedání zadku z lavice.
+h2|Tlaky s jednoručkami na rovné lavici|hrudnik|N|*|triceps,shoulders|Lehni si s jednoručkami u hrudníku, lopatky stažené. Tlač činky nahoru a mírně k sobě, dole je spusť do úrovně hrudníku, až ucítíš protažení. Zápěstí drž nad lokty.|Příliš roztažené lokty do pravého úhlu k tělu, které přetěžují ramena.
+h3|Tlaky s jednoručkami na šikmé lavici|hrudnik|N|*|shoulders,triceps|Lavici nastav na 30–45°. Činky tlač od horní části hrudníku nahoru nad ramena, spouštěj kontrolovaně. Lopatky drž celou dobu stažené do lavice.|Příliš strmá lavice – cvik pak přebírají ramena.
+h4|Bench press na šikmé lavici|hrudnik|N||shoulders,triceps|Na lavici se sklonem 30–45° spouštěj osu na horní část hrudníku pod klíční kosti a tlač ji kolmo vzhůru. Chodidla na zemi, lopatky stažené.|Spouštění osy příliš nízko k břichu.
+h5|Rozpažování s jednoručkami|hrudnik|N||shoulders|Vleže drž činky nad hrudníkem s mírně pokrčenými lokty. Obloukem je spouštěj do stran, dokud necítíš protažení prsních svalů, a stejným obloukem vrať zpět.|Příliš těžké činky a propínání loktů.
+h6|Tlaky na stroji vsedě|hrudnik|S|*|triceps,shoulders|Nastav sedačku tak, aby madla byla ve výšce středu hrudníku. Záda a lopatky opři, tlač madla dopředu do téměř propnutých loktů a pomalu vracej.|Ramena vytažená dopředu a odlepená záda od opěrky.
+h7|Peck deck|hrudnik|S|*|shoulders|Sedni si s rovnými zády, lokty mírně pokrčené ve výšce ramen. Stahuj ramena stroje před tělo, v krajní poloze na vteřinu zatni hrudník a pomalu povoluj.|Švihání a příliš velký rozsah vzad, který tahá za ramena.
+h8|Stahování protisměrných kladek|hrudnik|S||shoulders|Stoupni si mezi kladky, mírný předklon, jedna noha vpředu. S lehce pokrčenými lokty stahuj madla obloukem před tělo ke stehnům nebo před hrudník a pomalu vracej.|Přechod do tlaku – lokty se mají hýbat minimálně.
+h9|Tlaky na šikmém stroji|hrudnik|S||shoulders,triceps|Sedni si do stroje se šikmou dráhou, madla ve výšce horní části hrudníku. Tlač nahoru a vpřed, nepropínej lokty na doraz a kontrolovaně vracej.|Krátký rozsah pohybu kvůli příliš velké zátěži.
+h10|Bench press v multipressu|hrudnik|S||triceps,shoulders|Lavici umísti tak, aby osa dopadala na spodní část hrudníku. Odjisti, spusť osu k hrudníku a vytlač. Vedená dráha se hodí na učení pohybu i na dotlačení do únavy.|Špatně postavená lavice – osa míří na krk nebo břicho.
+h11|Klik|hrudnik|V|*|triceps,shoulders,abs|Dlaně o něco šířeji než ramena, tělo v jedné přímce od hlavy po paty, zpevněné břicho a hýždě. Spusť hrudník těsně nad zem s lokty asi 45° od těla a vytlač se zpět.|Prohnutá bedra a hlava předsunutá dopředu.
+h12|Klik na kolenou|hrudnik|V||triceps,shoulders|Stejný pohyb jako klik, jen s oporou o kolena. Tělo drž rovné od kolen po hlavu. Dobrý začátek, než zvládneš klasické kliky.|Vystrčený zadek – pohyb pak nejde z hrudníku.
+h13|Klik s nohama nahoře|hrudnik|V||shoulders,triceps|Chodidla polož na lavičku nebo židli, dlaně na zem. Čím výš máš nohy, tím víc pracuje horní část hrudníku a ramena. Tělo drž zpevněné.|Propadnutí v bedrech.
+h14|Široký klik|hrudnik|V||shoulders,triceps|Dlaně polož zhruba o dvě dlaně šířeji než ramena. Spouštěj se pomalu, dole ucítíš protažení hrudníku, a vytlač se zpět.|Lokty vytočené přesně do stran ve výšce ramen.
+h15|Kliky na bradlech v předklonu|hrudnik|V|*|triceps,shoulders|Na bradlech se nakloň trupem dopředu, nohy pokrč vzad. Spouštěj se, dokud nejsou ramena lehce pod úrovní loktů, a vytlač se nahoru. Předklon přenáší práci na hrudník.|Příliš hluboké spuštění přes bolest v ramenou.
+h16|Pullover s jednoručkou|hrudnik|N||lats,triceps|Lehni si napříč nebo podél lavice, jednoručku drž oběma rukama nad hrudníkem. S mírně pokrčenými lokty ji spouštěj obloukem za hlavu a vracej zpět nad hrudník.|Velké prohnutí v bedrech při spouštění.
+h17|Tlaky s gumou ve stoje|hrudnik|N||triceps,shoulders|Gumu ukotvi za sebou ve výšce hrudníku nebo si ji dej přes záda. Tlač ruce dopředu jako při kliku a pomalu vracej. Vhodné na doma i na zahřátí.|Záklon trupu místo zpevněného středu.
+z1|Shyb nadhmatem|zada|V|*|biceps,forearms|Chyť hrazdu o něco šířeji než ramena. Z visu nejdřív stáhni lopatky dolů, pak se přitáhni bradou nad hrazdu a lokty tlač k bokům. Pomalu se spusť do natažených paží.|Kopání nohama a poloviční rozsah.
+z2|Shyb podhmatem|zada|V||biceps|Úchop na šířku ramen, dlaně k sobě. Přitáhni se hrudníkem k hrazdě a kontrolovaně se spusť. Oproti nadhmatu víc zapojuje biceps a bývá lehčí.|Nedotažení dolů do natažených paží.
+z3|Australský shyb|zada|V|*|biceps,shoulders|Lehni si pod nízkou hrazdu, osu ve stojanu nebo TRX. Tělo zpevni do prkna, přitáhni hrudník k hrazdě a pomalu se spusť. Čím vodorovněji ležíš, tím je to těžší.|Propadlé boky a přitahování jen bradou.
+z4|Stahování horní kladky k hrudníku|zada|S|*|biceps|Sedni si, stehna zajisti pod opěrky. Tyč chyť šířeji než ramena, mírně se zakloň a stahuj ji k horní části hrudníku, lokty táhni dolů a vzad. Pomalu vracej do natažení.|Stahování za hlavu a houpání trupem.
+z5|Přítahy spodní kladky vsedě|zada|S|*|biceps,traps|Seď rovně s mírně pokrčenými koleny. Madlo přitáhni k břichu, lokty podél těla, na konci stáhni lopatky k sobě. Při vracení nech lopatky rozjet, ale záda drž rovná.|Velké kývání trupem dopředu a dozadu.
+z6|Veslování na stroji|zada|S||biceps,traps|Hrudník opři o podložku, madla táhni k tělu a lopatky stahuj k sobě. Opora hrudníku šetří bedra, takže se můžeš soustředit jen na záda.|Krčení ramen k uším.
+z7|Shyby na stroji s dopomocí|zada|S||biceps|Klekni nebo stoupni na plošinu, která tě nadlehčuje. Prováděj shyb v plném rozsahu. Postupně ubírej dopomoc, až zvládneš shyby bez ní.|Příliš velká dopomoc, při které záda skoro nepracují.
+z8|Stahování kladky nataženýma rukama|zada|S||triceps|Stoupni si čelem k horní kladce, mírný předklon. S téměř nataženými pažemi stahuj tyč obloukem ke stehnům a pomalu vracej. Cítit bys to měl po stranách zad.|Ohýbání loktů – cvik pak dělá triceps.
+z9|Přítahy velké činky v předklonu|zada|N|*|biceps,lowerback,traps|Předkloň se v kyčlích s rovnými zády, kolena mírně pokrčená. Osu přitahuj ke spodní části břicha, lokty veď podél těla a nahoře stáhni lopatky. Spouštěj kontrolovaně.|Kulatá záda a narovnávání trupu při každém opakování.
+z10|Přítahy jednoručky v opoře o lavici|zada|N|*|biceps,traps|Jednou rukou a kolenem se opři o lavici, záda vodorovně. Jednoručku táhni loktem vzhůru k boku, nahoře krátce zatni a pomalu spusť do natažení.|Vytáčení trupu za činkou.
+z11|Mrtvý tah|zada|N|*|lowerback,glutes,hams/traps,forearms,quads|Postav se s osou nad středem chodidel. Chyť ji vedle holení, zpevni břicho, narovnej záda a zvedej tlakem nohou do země, osa klouže podél nohou. Nahoře se narovnej, nezakláněj. Dolů veď boky vzad.|Kulatá bedra a osa daleko od těla.
+z12|T-bar přítahy|zada|N||biceps,traps,lowerback|Postav se nad osu zapřenou v rohu nebo do T-bar stroje. V předklonu s rovnými zády přitahuj madlo k hrudníku a stahuj lopatky.|Postupné narovnávání trupu, aby šla větší váha.
+z13|Krčení ramen s jednoručkami|zada|N||traps/forearms|Stůj rovně s činkami podél těla. Zvedej ramena přímo vzhůru k uším, nahoře na vteřinu zadrž a pomalu spusť. Paže zůstávají natažené.|Kroužení rameny – stačí pohyb nahoru a dolů.
+z14|Hyperextenze|zada|S||lowerback/glutes,hams|Na lavici na hyperextenze se opři stehny, kotníky zajisti. S rovnými zády se předkloň a zvedni trup do roviny s nohama. Výš už nechoď.|Prudký záklon nad úroveň těla.
+z15|Superman|zada|V||lowerback/glutes,shoulders|Lehni si na břicho, ruce natažené před sebe. Současně zvedni paže, hrudník a nohy kousek nad zem, dvě vteřiny vydrž a pomalu polož.|Zaklánění hlavy a švihání.
+z16|Přítahy gumy vsedě|zada|N||biceps,traps|Sedni si s nataženýma nohama, gumu zahákni za chodidla. S rovnými zády přitahuj konce gumy k břichu a stahuj lopatky k sobě.|Hrbení při vracení.
+r1|Tlaky s jednoručkami vsedě|ramena|N|*|triceps|Seď s oporou zad, činky ve výšce uší, lokty mírně před tělem. Tlač nahoru nad hlavu, nepropínej lokty na doraz a pomalu spouštěj zpět do výšky uší.|Prohýbání v bedrech a odlepení zad od opěrky.
+r2|Tlak velké činky nad hlavu ve stoje|ramena|N|*|triceps,abs|Osu drž na horní části hrudníku, úchop těsně za šířkou ramen. Zpevni břicho a hýždě a tlač osu přímo vzhůru, hlavu lehce uhni a pak ji vrať pod osu. Kontrolovaně spusť.|Záklon v bedrech místo zpevněného trupu.
+r3|Upažování s jednoručkami|ramena|N|*|traps|Stůj s činkami u stehen, lokty lehce pokrčené. Zvedej paže do stran do výšky ramen, malíčky mírně výš než palce, a pomalu spouštěj. Stačí lehká váha.|Švihání trupem a zvedání ramen k uším.
+r4|Předpažování s jednoručkami|ramena|N||chest|Zvedej střídavě nebo současně natažené paže před sebe do výšky ramen a pomalu spouštěj. Trup drž v klidu.|Zaklánění a zvedání nad úroveň ramen.
+r5|Zapažování v předklonu|ramena|N||traps|V hlubokém předklonu nebo vleže na šikmé lavici zvedej činky do stran s mírně pokrčenými lokty. Pohyb vede loket, cítíš zadní část ramen.|Příliš těžké činky – práci převezmou záda.
+r6|Arnoldovy tlaky|ramena|N||triceps|Začni s činkami před obličejem, dlaně k sobě. Během tlaku nahoru vytáčej dlaně dopředu, nahoře jsou jako u klasického tlaku. Stejnou cestou zpět.|Rychlé tempo bez kontroly rotace.
+r7|Tlaky na ramena na stroji|ramena|S|*|triceps|Sedačku nastav tak, aby madla byla ve výšce ramen. Tlač nahoru, záda opřená, a pomalu vracej. Vedená dráha je vhodná pro začátek i těžké série.|Sedačka příliš nízko – ramena začínají v nepříjemně hluboké poloze.
+r8|Upažování na kladce|ramena|S||traps|Stoupni si bokem ke spodní kladce a madlo chyť vzdálenější rukou. Upažuj do výšky ramene a pomalu vracej. Kladka drží napětí v celém rozsahu.|Pomáhání trupem.
+r9|Reverzní peck deck|ramena|S|*|traps|Sedni si čelem k opěrce stroje, madla před sebou. S lehce pokrčenými lokty rozpažuj dozadu, až jsou paže v rovině s rameny, a pomalu vracej. Cílíš na zadní část ramen.|Stahování lopatek místo pohybu v ramenou.
+r10|Face pull na kladce|ramena|S||traps|Lano na horní kladce chyť nadhmatem. Táhni ho k obličeji, lokty vysoko a do stran, na konci vytoč ruce vzad. Výborný cvik pro zdravá ramena a držení těla.|Příliš velká váha a přitahování k hrudníku.
+r11|Klik ve stříšce|ramena|V|*|triceps|Z pozice kliku zvedni boky vysoko, tělo tvoří obrácené V. Pokrč lokty a spusť hlavu mezi dlaně k zemi, pak se vytlač zpět. Nohy na lavičce cvik ztíží.|Lokty daleko do stran a pohyb vpřed místo dolů.
+r12|Klik ve stojce u zdi|ramena|V||triceps,traps|Vyšvihni se do stojky zády nebo čelem ke zdi. Spouštěj hlavu pomalu k zemi a vytlač se. Náročný cvik, začni částečným rozsahem.|Prohnutá bedra a nekontrolované spouštění.
+r13|Upažování s gumou|ramena|N||traps|Stoupni si na střed gumy, konce drž v rukou. Upažuj do výšky ramen a pomalu vracej. Odpor roste směrem nahoru.|Krčení ramen k uším.
+b1|Bicepsový zdvih s velkou činkou|biceps|N|*|forearms|Stůj rovně, osu nebo EZ činku drž podhmatem na šířku ramen. Lokty drž u těla a zvedej činku obloukem k ramenům. Nahoře zatni a pomalu spouštěj do natažení.|Houpání trupem a lokty cestující dopředu.
+b2|Bicepsový zdvih s jednoručkami|biceps|N|*|forearms|Stůj nebo seď, činky podél těla. Střídavě nebo současně zvedej činky k ramenům a během pohybu vytáčej malíček vzhůru. Spouštěj pomalu.|Švih a nedotažení dolů.
+b3|Kladivový zdvih|biceps|N||forearms|Činky drž palci nahoru jako kladivo. Zvedej k ramenům bez vytáčení zápěstí. Posiluje i sval pod bicepsem a předloktí.|Lokty odlepené od těla.
+b4|Bicepsový zdvih na šikmé lavici|biceps|N||forearms|Sedni si na lavici nakloněnou asi 60°, paže nech viset za tělem. Zvedej činky bez pohybu loktů vpřed. Biceps pracuje z velkého protažení.|Předsouvání ramen a loktů.
+b5|Koncentrovaný zdvih|biceps|N|||Vsedě se opři loktem o vnitřní stranu stehna. Zvedej jednoručku k rameni a nahoře krátce zatni. Pomalu spusť do natažení.|Pomáhání ramenem a trupem.
+b6|Bicepsový zdvih na spodní kladce|biceps|S|*|forearms|Stoupni si čelem ke spodní kladce, tyč chyť podhmatem. Lokty u těla, zvedej k ramenům a pomalu vracej. Kladka drží biceps pod napětím i dole.|Zaklánění trupu.
+b7|Bicepsový zdvih na Scottově lavici|biceps|S||forearms|Paže opři o šikmou podložku, podpaží až k její hraně. Zvedej činku nebo madla stroje, dole nepropínej lokty prudce na doraz.|Zvedání loktů z podložky.
+b8|Úzký shyb podhmatem|biceps|V|*|lats|Hrazdu chyť podhmatem o něco úžeji než ramena. Přitáhni se hrudníkem k hrazdě a soustřeď se na ohyb v loktech. Pomalu se spusť.|Zkrácený rozsah dole.
+b9|Bicepsový přítah pod hrazdou|biceps|V||lats|Pod nízkou hrazdou nebo na TRX se chyť podhmatem. Tělo drž zpevněné a přitahuj čelo k rukám ohybem v loktech, lokty zůstávají vysoko.|Propadlé boky.
+b10|Bicepsový zdvih s gumou|biceps|N||forearms|Stoupni si na gumu, konce drž podhmatem. Zvedej ruce k ramenům s lokty u těla a pomalu vracej.|Příliš rychlé spouštění.
+t1|Stahování horní kladky na triceps|triceps|S|*||Stoupni si ke kladce, lano nebo tyč chyť ve výšce hrudníku. Lokty přitiskni k tělu a propínej paže dolů, dole zatni triceps. Vracej jen po úroveň hrudníku.|Lokty utíkající dopředu a naléhání váhou těla.
+t2|Tricepsová extenze na kladce nad hlavou|triceps|S|||Postav se zády ke kladce, lano drž za hlavou, lokty míří vpřed. Propínej paže dopředu a nahoru a pomalu vracej do protažení.|Rozjíždění loktů do stran.
+t3|Tricepsové tlaky na stroji|triceps|S||chest,shoulders|Na stroji na dipy seď vzpřímeně, madla tlač dolů do propnutí paží a pomalu vracej. Lokty drž u těla.|Zvedání ramen k uším.
+t4|Kliky na bradlech vzpřímeně|triceps|V|*|chest,shoulders|Na bradlech drž trup co nejvíc svisle, lokty u těla. Spusť se, dokud nejsou paže zhruba v pravém úhlu, a vytlač se do propnutí.|Příliš hluboké spuštění a ramena u uší.
+t5|Úzký klik|triceps|V|*|chest,shoulders|Dlaně polož pod hrudník blízko k sobě. Lokty veď těsně podél těla, spusť hrudník k rukám a vytlač se.|Lokty vybočující do stran.
+t6|Kliky na lavičce za zády|triceps|V||shoulders|Opři dlaně o hranu lavičky za sebou, nohy před sebou. Spouštěj se ohybem loktů do pravého úhlu a vytlač se nahoru. Záda veď těsně u lavičky.|Příliš hluboké spuštění a tělo daleko od lavičky.
+t7|Francouzský tlak vleže|triceps|N|*||Vleže drž EZ činku nad hrudníkem. Ohýbej jen lokty a spouštěj činku k čelu nebo těsně za hlavu, pak propni paže. Nadloktí zůstávají v klidu.|Pohyb v ramenou a rozjíždění loktů.
+t8|Tricepsová extenze s jednoručkou nad hlavou|triceps|N|||Vsedě nebo ve stoje drž jednoručku oběma rukama nad hlavou. Spouštěj ji za hlavu ohybem loktů a propínej zpět. Lokty míří ke stropu.|Prohnutá bedra.
+t9|Bench press úzkým úchopem|triceps|N|*|chest,shoulders|Osu chyť na šířku ramen. Spouštěj ji na spodní část hrudníku s lokty u těla a vytlač nahoru. Unese velkou zátěž pro triceps.|Příliš úzký úchop, který bolí v zápěstí.
+t10|Kickback s jednoručkou|triceps|N|||V předklonu s oporou drž nadloktí vodorovně u těla. Propínej paži vzad do roviny a krátce zatni, pomalu vracej.|Švihání celou paží.
+t11|Tricepsová extenze s gumou|triceps|N|||Gumu ukotvi nahoře nebo ji přišlápni a veď za hlavou. Propínej paže proti odporu a pomalu vracej, lokty drž na místě.|Pohyb loktů místo předloktí.
+p1|Zdvih zápěstí podhmatem|predlokti|N|*||Předloktí polož na stehna nebo lavici, dlaně vzhůru, ruce přes hranu. Nech činku sjet do prstů a pak ji sevři a ohni zápěstí nahoru.|Zvedání předloktí z opory.
+p2|Zdvih zápěstí nadhmatem|predlokti|N|||Stejná poloha, dlaně dolů. Zvedej hřbety rukou vzhůru a pomalu spouštěj. Stačí malá zátěž.|Příliš těžká činka a pohyb celou paží.
+p3|Farmářská chůze|predlokti|N|*t|traps,abs|Vezmi do každé ruky těžkou jednoručku nebo kettlebell. Jdi vzpřímeně krátkými kroky, ramena dole a vzadu, břicho zpevněné. Počítej čas nebo vzdálenost.|Naklánění do stran a hrbení.
+p4|Vis na hrazdě|predlokti|V|*t|lats,shoulders|Chyť hrazdu nadhmatem a zavěs se. Ramena drž aktivně stažená od uší a vydrž co nejdéle. Skvělé na úchop i na protažení.|Úplně povolená ramena u uší.
+p5|Reverzní bicepsový zdvih|predlokti|N||biceps|Osu nebo jednoručky drž nadhmatem. Zvedej k ramenům s lokty u těla a pomalu spouštěj. Posiluje horní stranu předloktí.|Ohýbání zápěstí dolů.
+p6|Navíjení závaží na tyč|predlokti|N|||Na tyč přivaž provázek se závažím. S pažemi před sebou navíjej provázek otáčením zápěstí nahoru a stejně pomalu odvíjej dolů.|Spouštění závaží volným pádem.
+p7|Zdvih zápěstí na spodní kladce|predlokti|S|*||Sedni si ke spodní kladce, předloktí opři o stehna a tyč drž podhmatem. Ohýbej zápěstí vzhůru a pomalu povoluj. Kladka dává plynulý odpor.|Pomáhání lokty.
+p8|Reverzní zdvih na kladce|predlokti|S||biceps|Tyč na spodní kladce chyť nadhmatem. Zvedej k ramenům s lokty u těla a pomalu vracej.|Zaklánění trupu.
+c1|Plank|core|V|*t|shoulders,glutes|Opři se o předloktí a špičky, lokty pod rameny. Tělo drž v přímce, zatni břicho i hýždě a klidně dýchej. Ukonči, jakmile se začnou propadat bedra.|Propadlá bedra nebo zadek vysoko.
+c2|Boční plank|core|V|t|obliques/abs,shoulders|Opři se o jedno předloktí a hranu chodidla, tělo v přímce. Boky tlač vzhůru a vydrž. Počítej čas na každou stranu.|Klesání boků k zemi.
+c3|Zkracovačky|core|V|||Lehni si na záda, kolena pokrčená. Odlep lopatky od země postupným rolováním páteře, bedra zůstávají na zemi. Nahoře vydechni a pomalu se vrať.|Tahání hlavy rukama.
+c4|Zvedání nohou ve visu|core|V|*|forearms|Zavěs se na hrazdu. Bez houpání zvedej pokrčená kolena k hrudníku, pokročilí natažené nohy do vodorovné polohy. Na konci podsaď pánev a pomalu spouštěj.|Houpání a švih z nohou.
+c5|Zvedání nohou vleže|core|V|||Lehni si na záda, ruce podél těla. Zvedej natažené nohy do svislé polohy a pomalu je spouštěj těsně nad zem. Bedra drž přitisknutá k podložce.|Prohnutí beder při spouštění.
+c6|Ruské twisty|core|V||obliques/abs|Seď v mírném záklonu s pokrčenými koleny. Otáčej trupem ze strany na stranu a dotýkej se rukama země vedle boků. Můžeš přidat kotouč nebo medicinbal.|Otáčení jen rukama bez rotace trupu.
+c7|Horolezec|core|V||shoulders,quads|Z pozice kliku střídavě přitahuj kolena k hrudníku. Boky drž nízko a ramena nad zápěstími. Počítej opakování na obě nohy dohromady.|Zadek vysoko a poskakování.
+c8|Mrtvý brouk|core|V|||Lehni si na záda, ruce ke stropu, kolena v pravém úhlu. Pomalu spouštěj protilehlou ruku a nohu k zemi, bedra tlač do podložky, a vystřídej strany.|Prohýbání beder.
+c9|Bicykl|core|V||obliques,abs/|Vleže na zádech střídavě přitahuj loket k protilehlému kolenu, druhou nohu natahuj nízko nad zem. Otáčej hrudníkem, ne jen lokty.|Rychlé tempo a tahání za krk.
+c10|Hollow hold|core|V|t||Lehni si na záda, bedra přitiskni k zemi. Zvedni lopatky a natažené nohy kousek nad zem, ruce za hlavu, a drž tvar misky.|Odlepená bedra – raději pokrč kolena.
+c11|Sklapovačky|core|V|||Vleže natažený současně zvedni trup i nohy a dotkni se rukama holení nebo špiček. Pomalu se vrať těsně nad zem.|Švih a dopadání na záda.
+c12|Zkracovačky na kladce vkleče|core|S|*||Klekni čelem k horní kladce, lano drž u hlavy. Zakulacuj páteř a táhni lokty ke kolenům, boky zůstávají na místě. Pomalu vracej.|Pohyb v kyčlích místo rolování trupu.
+c13|Zkracovačky na stroji|core|S|||Sedni si do stroje, chyť madla a zakulacuj trup proti odporu. Vydechni v krajní poloze a pomalu vracej.|Tahání rukama.
+c14|Dřevorubec na kladce|core|S||obliques/abs,shoulders|Stoupni si bokem ke kladce. S nataženými pažemi táhni madlo šikmo přes tělo shora dolů nebo zdola nahoru a otáčej trupem i boky. Vracej pomalu.|Pohyb jen pažemi.
+c15|Zvedání kolen na bradlech|core|S||forearms|Opři se předloktími o podložky, záda o opěrku. Zvedej kolena k hrudníku a podsaď pánev, pomalu spouštěj.|Houpání nohama.
+c16|Kolečko na břicho|core|N|*|lats,shoulders|Klekni si, kolečko drž pod rameny. Pomalu vyjížděj dopředu se zpevněným břichem, dokud udržíš rovná bedra, a přitáhni se zpět silou břicha.|Propadnutí beder v natažení.
+c17|Pallof press s gumou|core|N||obliques,abs/|Stoupni si bokem k ukotvené gumě, ruce u hrudníku. Vytlač ruce před sebe a nenech se gumou otočit. Dvě vteřiny vydrž a vrať.|Otáčení boků ke kotvě.
+g1|Hip thrust s velkou činkou|hyzde|N|*|hams|Lopatkami se opři o lavici, osu polož do třísel přes podložku. Chodidla na šířku boků. Zvedej boky do roviny s trupem, nahoře silně zatni hýždě, bradu drž u hrudníku. Pomalu spusť.|Prohnutí beder místo propnutí kyčlí.
+g2|Most|hyzde|V|*|hams|Lehni si na záda, kolena pokrčená, paty blízko hýždí. Zatlač do pat a zvedni boky do roviny, nahoře dvě vteřiny zatni hýždě a pomalu polož.|Zvedání přes bedra.
+g3|Most na jedné noze|hyzde|V||hams|Stejně jako most, jen jednu nohu drž nataženou nebo pokrčenou ve vzduchu. Boky drž rovně, nenech je klesat na stranu.|Rotace pánve.
+g4|Zakopávání na kladce|hyzde|S|*|hams|Manžetu připni na kotník, čelem ke spodní kladce se přidrž. S mírným předklonem zanožuj nataženou nohu vzad a zatni hýždi, pomalu vracej.|Prohýbání beder při zanožení.
+g5|Unožování na stroji|hyzde|S|||Sedni si do stroje, opěrky na vnější straně kolen. Roztahuj nohy od sebe proti odporu, v krajní poloze zadrž a pomalu vracej. Mírný předklon víc zapojí hýždě.|Rychlé pumpování bez kontroly.
+g6|Bulharský dřep|hyzde|N|*|quads|Zadní nohu polož nártem na lavici, přední nohu dej dost dopředu. Spouštěj se rovně dolů, dokud není přední stehno vodorovně, a vytlač se přes patu. Mírný předklon víc zatíží hýždě.|Koleno propadající dovnitř.
+g7|Výstupy na bednu|hyzde|N||quads|Postav jednu nohu celou plochou na bednu nebo lavici. Vystup silou přední nohy, nahoře se narovnej a pomalu sestup stejnou nohou dolů. Můžeš držet jednoručky.|Odrážení se spodní nohou.
+g8|Zakopávání vkleče|hyzde|V|||Na čtyřech zvedej jednu pokrčenou nohu patou ke stropu, dokud není stehno v rovině s trupem. Zatni hýždi a pomalu vracej.|Prohnutí v bedrech.
+g9|Úkroky s gumou|hyzde|N|||Gumu si dej nad kolena nebo kolem kotníků. V mírném podřepu dělej úkroky do strany, chodidla rovnoběžně, guma stále napnutá.|Kolena padající dovnitř.
+g10|Sumo dřep s kettlebellem|hyzde|N||quads|Postoj široký, špičky vytočené ven, kettlebell drž mezi nohama. Spusť se dolů s rovnými zády a koleny nad špičkami, vytlač se nahoru.|Hrbení a kolena dovnitř.
+q1|Dřep s velkou činkou|kvadr|N|*|glutes,hams,lowerback|Osu polož na trapézy, chodidla na šířku ramen, špičky mírně ven. Nadechni se do břicha, pošli boky vzad a dolů a dřepni aspoň do vodorovných stehen. Kolena jdou ve směru špiček. Vytlač se celým chodidlem.|Kolena dovnitř, zvedání pat a kulatá záda.
+q2|Goblet dřep|kvadr|N|*|glutes,abs|Jednoručku nebo kettlebell drž u hrudníku. Dřepni mezi kolena s rovnými zády, lokty míří dovnitř kolen, a vytlač se nahoru. Ideální na naučení dřepu.|Předklánění a činka daleko od těla.
+q3|Přední dřep|kvadr|N||glutes,abs|Osu polož na přední stranu ramen, lokty vysoko. Dřepni s co nejsvislejším trupem a vytlač se nahoru. Víc zatěžuje přední stehna a střed těla.|Padající lokty a kulatá horní záda.
+q4|Výpady s jednoručkami|kvadr|N|*|glutes,hams|Udělej dlouhý krok vpřed a spusť zadní koleno těsně nad zem. Trup drž vzpřímený, přední koleno nad kotníkem. Odraz se zpět nebo pokračuj v chůzi.|Krátký krok a koleno padající dovnitř.
+q5|Leg press|kvadr|S|*|glutes,hams|Sedni si do stroje, chodidla na šířku ramen uprostřed desky. Spouštěj sáně, dokud zůstávají bedra opřená, a vytlač je zpět. Kolena nepropínej na doraz.|Odlepování beder a pánve v dolní poloze.
+q6|Předkopávání|kvadr|S|*||Sedni si tak, aby osa otáčení stroje byla u kolen. Propínej nohy do roviny, nahoře vteřinu zatni stehna a pomalu spouštěj.|Kopání švihem a odlepování zadku ze sedačky.
+q7|Hacken dřep|kvadr|S||glutes|Opři záda a ramena o opěrky, chodidla na desce na šířku ramen. Dřepni do hloubky, kterou zvládneš bez zvedání pat, a vytlač se nahoru.|Kolena padající dovnitř.
+q8|Dřep v multipressu|kvadr|S||glutes|Osu polož na trapézy, chodidla o kousek před osu. Dřepni dolů po vedené dráze a vytlač se. Hodí se na učení i na dotlačení do únavy.|Chodidla příliš vzadu a tlak do kolen.
+q9|Přinožování na stroji|kvadr|S|||Sedni si do stroje, opěrky na vnitřní straně kolen. Stahuj nohy k sobě proti odporu, krátce zadrž a pomalu povoluj. Posiluje vnitřní stranu stehen.|Příliš velký rozsah hned napoprvé.
+q10|Dřep s vlastní vahou|kvadr|V|*|glutes|Chodidla na šířku ramen, ruce před sebou. Pošli boky vzad a dolů, hrudník drž vzhůru, kolena ve směru špiček. Dřepni co nejhlouběji s patami na zemi a postav se.|Zvedání pat a kolena dovnitř.
+q11|Výpady vzad|kvadr|V||glutes,hams|Ze stoje udělej krok vzad a spusť zadní koleno těsně nad zem. Váha zůstává na přední noze, kterou se vytlačíš zpět. Šetrnější ke kolenům než výpad vpřed.|Předklon a odraz ze zadní nohy.
+q12|Židle u zdi|kvadr|V|t|glutes|Opři se zády o zeď a sjeď dolů, až jsou stehna vodorovně a kolena v pravém úhlu. Vydrž, ruce nech volně, neopírej je o stehna.|Kolena před špičkami a zadek příliš vysoko.
+q13|Dřep na jedné noze k lavičce|kvadr|V||glutes|Stoupni si před lavičku na jednu nohu, druhou předpaž. Pomalu si sedni na lavičku a postav se zpět silou jedné nohy. Postupně snižuj lavičku.|Dopadnutí na lavičku bez kontroly.
+q14|Výskoky z dřepu|kvadr|V||glutes,calves|Dřepni do půlky a vyskoč co nejvýš. Dopadni měkce přes špičky do dalšího dřepu. Dělej menší počet kvalitních opakování.|Tvrdý dopad na paty a kolena dovnitř.
+m1|Rumunský mrtvý tah|hams|N|*|glutes,lowerback|Stůj s osou nebo jednoručkami u stehen, kolena mírně pokrčená. Posílej boky vzad, činka klouže podél nohou, záda rovná. Jdi dolů, dokud cítíš tah v zadních stehnech, a narovnej se propnutím kyčlí.|Kulatá záda a dřepování místo pohybu v kyčlích.
+m2|Rumunský tah na jedné noze|hams|N||glutes,lowerback|Stůj na jedné noze, jednoručku drž v opačné ruce. Předkláněj se s rovnými zády a zvedej volnou nohu vzad, boky drž rovně. Vrať se zpět silou stojné nohy.|Vytáčení pánve do strany.
+m3|Zakopávání vleže|hams|S|*|calves|Lehni si na břicho, váleček těsně nad patami, kolena za hranou lavice. Přitahuj paty k hýždím, nahoře zadrž a pomalu spouštěj.|Zvedání boků z lavice.
+m4|Zakopávání vsedě|hams|S|*|calves|Sedni si, stehna zajisti opěrkou, váleček pod lýtky. Stahuj nohy pod sebe co nejdál a pomalu vracej do natažení.|Rychlé vracení bez kontroly.
+m5|Nordic curl|hams|V|*|glutes|Klekni si, kotníky zaklesni pod něco pevného nebo ať ti je někdo drží. S rovným tělem se pomalu spouštěj dopředu, co nejdéle brzdi zadními stehny, dopadni do rukou a odraz se zpět.|Lámání v bocích.
+m6|Zakopávání na míči|hams|N||glutes|Lehni si na záda, paty polož na gymnastický míč a zvedni boky. Přitahuj míč patami k hýždím a pomalu ho odvaluj zpět, boky drž stále nahoře.|Klesající boky.
+m7|Good morning|hams|N||lowerback,glutes|Osu polož na trapézy, kolena mírně pokrčená. S rovnými zády se předkloň posunem boků vzad téměř do vodorovné polohy a narovnej se. Používej lehkou váhu.|Kulatá záda a příliš těžká osa.
+m8|Zakopávání s posunem pat|hams|V||glutes|Lehni si na záda na hladké podlaze, pod paty dej ručník nebo ponožky. Zvedni boky a přisouvej paty k hýždím, pak je pomalu odsuň zpět.|Položení boků mezi opakováními.
+l1|Výpony ve stoje na stroji|lytka|S|*||Opři ramena pod opěrky, špičky na hraně stupínku. Spusť paty co nejníž do protažení a vytlač se vysoko na špičky. Nahoře vteřinu zadrž.|Pérování a krátký rozsah.
+l2|Výpony vsedě na stroji|lytka|S|*||Sedni si, opěrku polož na stehna nad kolena, špičky na stupínku. Spouštěj paty dolů a zvedej je co nejvýš. Cílí na hlubší lýtkový sval.|Odrážení ze spodní polohy.
+l3|Výpony na leg pressu|lytka|S|||Na leg pressu opři o spodní hranu desky jen špičky, nohy téměř natažené. Propínej a povoluj kotníky v plném rozsahu.|Odjištění sání bez jistoty – nech si pojistky zapnuté.
+l4|Výpony na schodu na jedné noze|lytka|V|*||Stoupni si špičkou jedné nohy na schod a přidrž se. Spusť patu pod úroveň schodu a vytlač se co nejvýš. Vystřídej nohy.|Rychlé tempo bez protažení dole.
+l5|Výpony obounož|lytka|V|||Ve stoje se zvedej na špičky obou nohou co nejvýš a pomalu spouštěj. Na schodu získáš větší rozsah.|Přepadávání na malíkovou hranu.
+l6|Výpony s jednoručkami|lytka|N|*||Drž jednoručky podél těla, špičky na kotouči nebo schodu. Vytlač se vysoko na špičky, zadrž a pomalu spouštěj paty dolů.|Pokrčování kolen.
+l7|Švihadlo|lytka|N|t|shoulders,forearms|Skákej nízko na špičkách, kolena lehce pokrčená, švihadlem toč zápěstími. Lokty drž u těla. Počítej čas.|Vysoké skoky a točení celými pažemi.
+x1|Angličák|telo|V|*|chest,triceps|Ze stoje dřepni, polož dlaně na zem a skoč nohama do pozice kliku. Udělej klik, přitáhni nohy zpět k rukám a vyskoč s rukama nad hlavu.|Propadlá bedra při dopadu do kliku.
+x2|Kettlebell swing|telo|N|*|glutes,hams/lowerback,shoulders,abs|Postav se nad kettlebell, široký postoj. S rovnými zády ho švihni mezi nohy a prudkým propnutím kyčlí ho vymršti do výšky hrudníku. Paže jsou jen lana, sílu dává zadek.|Dřepování a zvedání rukama.
+x3|Thruster s jednoručkami|telo|N||quads,shoulders/glutes,triceps|Činky drž u ramen. Dřepni dolů a při zvedání plynule vytlač činky nad hlavu. Spusť je zpět k ramenům a rovnou pokračuj do dalšího dřepu.|Oddělený dřep a tlak bez využití švihu nohou.
+x4|Přemístění a výtlak|telo|N||shoulders,glutes,quads/traps,triceps|Jednoručky nebo osu zvedni ze země či od stehen výbušným propnutím kyčlí na ramena a odtud je vytlač nad hlavu. Vracej stejnou cestou.|Tahání rukama místo práce nohou a boků.
+x5|Turecký vztyk|telo|N||shoulders,abs/glutes|Vleže drž kettlebell nad sebou v natažené paži. Postupně se přes loket, dlaň a klek zvedni do stoje, oči stále na kettlebellu. Stejně pomalu se vrať na zem.|Spěch a pokrčený loket pod zátěží.
+x6|Hody medicinbalem o zem|telo|N||abs,lats,shoulders/|Zvedni medicinbal nad hlavu, vytáhni se na špičky a vší silou ho hoď před sebe na zem. Dřepni pro něj a opakuj.|Hrbení při zvedání míče.
+x7|Veslařský trenažér|telo|S|*m|lats,quads,glutes/biceps,abs|Zaber nejdřív nohama, pak zakloň trup a nakonec přitáhni madlo k dolním žebrům. Zpět jdi v opačném pořadí: ruce, trup, nohy.|Tahání rukama dřív, než zaberou nohy.
+x8|Běžecký pás|telo|S|m|quads,calves,hams/glutes|Běhej nebo svižně choď vzpřímeně, došlapuj pod těžiště a nedrž se madel. Sklon pásu zvýší zátěž bez nutnosti zrychlovat.|Držení madel a dlouhý krok před tělo.
+x9|Rotoped|telo|S|m|quads/hams,calves,glutes|Sedlo nastav tak, aby noha v dolní poloze zůstala mírně pokrčená. Šlapej plynule, střídej klidné tempo s rychlejšími úseky.|Sedlo příliš nízko – přetěžuje kolena.
+x10|Eliptický trenažér|telo|S|m|quads,glutes/hams,shoulders|Stůj vzpřímeně, tlač do pedálů celým chodidlem a zapoj i paže. Šetrný ke kloubům, vhodný i při vyšší váze.|Věšení se do madel.
+x11|Stepper|telo|S|m|glutes,quads/calves|Šlapej celým chodidlem, trup vzpřímený, madel se jen lehce dotýkej. Dělej plné kroky.|Opírání váhy o madla.
+x12|Skákací panák|telo|V|t|calves,shoulders/quads|Ze stoje vyskoč do roznožení a zároveň upaž až nad hlavu, dalším skokem se vrať. Dopadej měkce na špičky.|Tvrdý dopad na celá chodidla.
+x13|Medvědí chůze|telo|V|t|shoulders,abs/quads|Na čtyřech zvedni kolena kousek nad zem. Jdi vpřed současným posunem protilehlé ruky a nohy, záda rovná a boky nízko.|Zadek vysoko a velké kroky.
+x14|Běh nebo svižná chůze venku|telo|V|m|quads,calves,hams/glutes|Zvol tempo, při kterém ještě dokážeš mluvit ve větách. Pro kondici i hubnutí je pravidelnost důležitější než rychlost.|Příliš rychlý začátek.
+`;
+const BASE=RAW.trim().split('\n').map(l=>{const [id,name,cat,eq,fl,mus,how,err]=l.split('|');return{id,name,cat,eq,fl,mus,how,err}});
+const WARM=[
+['Probuzení kloubů',['Kroužení rameny – 10× vpřed a 10× vzad','Kroužení boky – 10× na každou stranu','Kroužení koleny – 10×','Kroužení kotníky – 10× každý','Předklon a vytažení do výponu – 8×','Hluboký dřep s výdrží – 30 s']],
+['Rychlý start',['Skákací panák – 40 s','Vysoká kolena na místě – 30 s','Zakopávání na místě – 30 s','Dřepy – 12×','Kliky nebo kliky na kolenou – 8×','Kroužení pažemi – 10× oběma směry']],
+['Kočičí hřbet',['Kočka a kráva na čtyřech – 10×','Dětská pozice – 30 s','Rotace hrudníku v kleku – 8× na stranu','Střecha a kobra plynule – 6×','Výpad s rotací trupu – 5× na stranu','Most – 12×']],
+['Stínový boxer',['Boxerský poskok – 40 s','Přímé údery do vzduchu – 30 s','Úhyb do podřepu a úder – 10×','Rotace trupu ve stoje – 12×','Kroužení zápěstími a lokty – 10×','Výpady vzad – 6× na nohu']],
+['Zvířecí chůze',['Medvědí chůze – 20 s','Píďalka: z předklonu dojdi rukama do kliku a zpět – 6×','Krabí chůze – 20 s','Žabí dřepy – 8×','Výpady v chůzi – 8× na nohu']],
+['S gumou nebo ručníkem',['Roztahování gumy před tělem – 15×','Přenášení gumy nataženýma rukama přes hlavu – 10×','Přítahy gumy k obličeji – 15×','Dřep s rukama nad hlavou – 10×','Předklon s rovnými zády bez zátěže – 12×']],
+['Švihy a skoky',['Švihadlo, klidně jen naprázdno – 60 s','Výpony na špičky – 15×','Švihy nohou vpřed a vzad – 10× každou','Švihy nohou do stran – 10× každou','Lehké výskoky z podřepu – 8×']],
+['Velké protažení',['Hluboký výpad, loket k zemi a rotace paže ke stropu – 5× na stranu','Hluboký dřep s otáčením paží ke stropu – 6×','Klik s rotací do bočního planku – 6×','Most – 12×','Skákací panák – 30 s']]
+];
+/* ---------- state ---------- */
+const KEY='trenink-denik-v1';
+const DEF=()=>({plans:[],history:[],active:null,custom:[],guide:null,rest:90,lastWarm:-1,lastBackup:0});
+let S=DEF();
+let ui={tab:'dnes',planId:null,histId:null,lib:{q:'',cat:'',eq:'',top:false},pick:null,gq:null};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const norm=s=>String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const fN=v=>String(Math.round((+v||0)*100)/100).replace('.',',');
+const pad=n=>String(n).padStart(2,'0');
+function fDur(ms){let s=Math.max(0,Math.floor(ms/1000));const h=Math.floor(s/3600);s-=h*3600;const m=Math.floor(s/60);s-=m*60;return h?h+':'+pad(m)+':'+pad(s):m+':'+pad(s)}
+const fDate=t=>new Date(t).toLocaleDateString('cs-CZ',{weekday:'short',day:'numeric',month:'numeric',year:'numeric'});
+const isTop=e=>e.fl.includes('*');
+const unit=e=>e.fl.includes('t')?'s':e.fl.includes('m')?'min':'×';
+const unitHead=e=>e.fl.includes('t')?'sekund':e.fl.includes('m')?'minut':'opak.';
+function allEx(){return BASE.concat(S.custom)}
+function ex(id){return allEx().find(e=>e.id===id)||{id,name:'Smazaný cvik',cat:'telo',eq:'V',fl:'',mus:'',how:'',err:''}}
+function fSet(r,w,e){const u=unit(e);if(u==='×')return w?fN(r)+' × '+fN(w)+' kg':fN(r)+'×';return fN(r)+' '+u+(w?' · '+fN(w)+' kg':'')}
+/* storage: localStorage + mirror in IndexedDB */
+let idb=null,saveT=null;
+function idbOpen(){return new Promise(res=>{try{const r=indexedDB.open('trenink-denik',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>{idb=r.result;res()};r.onerror=()=>res()}catch(e){res()}})}
+function idbGet(){return new Promise(res=>{if(!idb)return res(null);try{const q=idb.transaction('kv').objectStore('kv').get(KEY);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)}catch(e){res(null)}})}
+function save(){clearTimeout(saveT);saveT=null;const j=JSON.stringify(S);try{localStorage.setItem(KEY,j)}catch(e){}try{if(idb)idb.transaction('kv','readwrite').objectStore('kv').put(j,KEY)}catch(e){}}
+function saveSoon(){if(!saveT)saveT=setTimeout(save,400)}
+function adopt(o){if(!o||!Array.isArray(o.plans)||!Array.isArray(o.history))return false;S=Object.assign(DEF(),o);return true}
+/* ---------- helpers ---------- */
+function count(a){let d=0,t=0;a.items.forEach(it=>it.sets.forEach(s=>{t++;if(s.done)d++}));return[d,t]}
+function volume(a){let v=0;a.items.forEach(it=>{if(unit(ex(it.ex))==='×')it.sets.forEach(s=>{if(s.done)v+=(+s.r||0)*(+s.w||0)})});return Math.round(v)}
+function lastPerf(id){for(const h of S.history){const it=h.items.find(i=>i.ex===id);if(it){const d=it.sets.filter(s=>s.done);if(d.length)return{h,sets:d}}}return null}
+function defSets(id){const lp=lastPerf(id);if(lp)return lp.sets.map(s=>({r:s.r,w:s.w}));const e=ex(id),u=unit(e);return u==='min'?[{r:10,w:0}]:u==='s'?[{r:30,w:0},{r:30,w:0},{r:30,w:0}]:[{r:10,w:0},{r:10,w:0},{r:10,w:0}]}
+function pickWarm(){let i;do{i=Math.floor(Math.random()*WARM.length)}while(i===S.lastWarm&&WARM.length>1);S.lastWarm=i;return i}
+function curPlan(){return S.plans.find(p=>p.id===ui.planId)}
+function ctxItems(){if(ui.tab==='plany'&&ui.planId){const p=curPlan();return p?p.items:[]}return S.active?S.active.items:[]}
+function toast(m){const t=$('#toast');t.textContent=m;t.className='on';clearTimeout(toast.t);toast.t=setTimeout(()=>t.className='',1800)}
+function muscles(e){const m=e.mus||'';let p,s;if(m.includes('/')){[p,s]=m.split('/')}else{p='';s=m}return{p:p?p.split(','):(CATM[e.cat]||[]),s:s?s.split(',').filter(Boolean):[]}}
+/* muscle map */
+const MMF={chest:[[41,45,8,6.5],[59,45,8,6.5]],shoulders:[[29.5,37,6,6.5],[70.5,37,6,6.5]],biceps:[[25.5,54,4.2,9],[74.5,54,4.2,9]],forearms:[[22,81,3.6,11],[78,81,3.6,11]],abs:[[50,70,6.5,15]],obliques:[[39.5,72,3,11],[60.5,72,3,11]],quads:[[42,126,7,21],[58,126,7,21]],calves:[[42.2,170,4,13],[57.8,170,4,13]]};
+const MMB={traps:[[50,36,9.5,9]],shoulders:MMF.shoulders,lats:[[40.5,59,6.5,13],[59.5,59,6.5,13]],lowerback:[[50,83,6,8]],triceps:MMF.biceps,forearms:MMF.forearms,glutes:[[42.5,102,7.5,8],[57.5,102,7.5,8]],hams:[[42,131,7,18],[58,131,7,18]],calves:[[42.2,169,5,13],[57.8,169,5,13]]};
+function body(map,p,s){let o='<svg viewBox="0 0 100 200" aria-hidden="true"><g fill="#1c1c2a"><circle cx="50" cy="15" r="8.5"/><rect x="46.5" y="22" width="7" height="8"/><path d="M31 31Q50 26 69 31L64 88Q66 98 67 108L33 108Q34 98 36 88Z"/>';
+[[20.5,32,10,36,5],[17.5,64,9,34,4.5],[69.5,32,10,36,5],[73.5,64,9,34,4.5],[34,100,16,52,8],[50,100,16,52,8],[37,148,10.5,42,5],[52.5,148,10.5,42,5]].forEach(r=>o+=`<rect x="${r[0]}" y="${r[1]}" width="${r[2]}" height="${r[3]}" rx="${r[4]}"/>`);
+o+='<circle cx="21.5" cy="101" r="3.6"/><circle cx="78.5" cy="101" r="3.6"/><ellipse cx="42" cy="192" rx="5.5" ry="2.6"/><ellipse cx="58" cy="192" rx="5.5" ry="2.6"/></g>';
+for(const k in map){const c=p.includes(k)?'#ff6b3d':s.includes(k)?'#8f6bff':'#2b2b40',op=p.includes(k)?1:s.includes(k)?.8:.7;map[k].forEach(e=>o+=`<ellipse cx="${e[0]}" cy="${e[1]}" rx="${e[2]}" ry="${e[3]}" fill="${c}" opacity="${op}"/>`)}
+return o+'</svg>'}
+function muscleMap(e){const m=muscles(e);return `<div class="mm"><figure>${body(MMF,m.p,m.s)}zepředu</figure><figure>${body(MMB,m.p,m.s)}zezadu</figure></div><div class="legend"><span><i style="background:#ff6b3d"></i>hlavní svaly</span><span><i style="background:#8f6bff"></i>pomocné svaly</span></div>`}
+/* ---------- sheets ---------- */
+const sheets=[];let askCb=null;
+function openSheet(fn){sheets.push(fn);renderSheet()}
+function closeSheet(){sheets.pop();if(!sheets.length)ui.pick=null;renderSheet();render()}
+function renderSheet(){const el=$('#sheet');if(!sheets.length){el.className='';el.innerHTML='';return}el.className='on';el.innerHTML='<div class="sh-bg" data-a="closeSheet"></div><div class="sh-body" role="dialog" aria-modal="true">'+sheets[sheets.length-1]()+'</div>'}
+function ask(msg,ok,cb){askCb=cb;openSheet(()=>`<h2>${esc(msg)}</h2><button class="btn bad" data-a="askOk">${esc(ok)}</button><button class="btn ghost" data-a="closeSheet">Zpět</button>`)}
+/* ---------- views ---------- */
+const ICON={dnes:'<path d="M3 12h3l2-6 4 12 3-8 2 4h4"/>',plany:'<rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 9h6M9 13h6M9 17h3"/>',cviky:'<path d="M4 9v6M7 6v12M17 6v12M20 9v6M7 12h10"/>',historie:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',navod:'<path d="M12 3.5l2.6 5.3 5.9.9-4.300 4.100 1 5.800L12 16.900l-5.200 2.700 1-5.800-4.300-4.100 5.900-.9z"/>'};
+const TABN={dnes:'Dnes',plany:'Plány',cviky:'Cviky',historie:'Historie',navod:'Návod'};
+function renderTabs(){$('#tabsin').innerHTML=Object.keys(TABN).map(t=>`<button class="${ui.tab===t?'on':''}" data-a="tab" data-t="${t}"><svg viewBox="0 0 24 24">${ICON[t]}</svg>${t==='dnes'&&S.active?'Trénink':TABN[t]}</button>`).join('')}
+function render(){renderTabs();const v=$('#view');v.innerHTML=({dnes:()=>S.active?vWork():vHome(),plany:()=>ui.planId&&curPlan()?vPlanEdit():vPlans(),cviky:vLib,historie:()=>ui.histId&&S.history.find(h=>h.id===ui.histId)?vHistDetail():vHist(),navod:vGuide})[ui.tab]()}
+function head(eb,t,sub){return `<header><div class="eyebrow">${eb}</div><h1>${t}</h1>${sub?`<p class="sub">${sub}</p>`:''}</header>`}
+function vHome(){
+  const now=new Date(),d=(now.getDay()+6)%7,mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-d).getTime();
+  const wk=S.history.filter(h=>h.start>=mon).length,last=S.history[0];
+  const ago=last?Math.floor((Date.now()-last.end)/864e5):null;
+  let o=head(now.toLocaleDateString('cs-CZ',{weekday:'long',day:'numeric',month:'long'}),'Tréninkový deník');
+  o+=`<div class="stats"><div class="stat"><b>${wk}</b><span>tento týden</span></div><div class="stat"><b>${S.history.length}</b><span>tréninků celkem</span></div><div class="stat"><b>${ago==null?'–':ago===0?'dnes':ago+' d'}</b><span>poslední trénink</span></div></div>`;
+  o+='<h2>Spustit trénink</h2>';
+  if(!S.plans.length)o+=`<div class="card"><p>Zatím nemáš žádný plán. Vytvoř si první, nebo si nech v záložce Návod poradit, jak ho poskládat.</p><div class="row"><button class="btn vio grow" data-a="newPlan">Vytvořit plán</button><button class="btn grow" data-a="tab" data-t="navod">Otevřít návod</button></div></div>`;
+  S.plans.forEach(p=>{const n=p.items.reduce((a,i)=>a+i.sets.length,0);o+=`<div class="card"><div class="row"><div class="grow"><h2>${esc(p.name||'Plán bez názvu')}</h2><p class="sub">${p.items.length} cviků · ${n} sérií</p></div><button class="btn hot" data-a="start" data-id="${p.id}">Start</button></div></div>`});
+  o+=`<button class="btn" data-a="start" data-id="">Volný trénink bez plánu</button>`;
+  const standalone=navigator.standalone||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);
+  if(!standalone)o+=`<div class="card"><b>Přidej si deník na plochu</b><p class="sub">V Safari klepni na Sdílet a zvol Přidat na plochu. Deník se pak otevírá samostatně jako aplikace. Data z ikony na ploše a ze Safari se ukládají zvlášť, proto začni zapisovat až z plochy.</p></div>`;
+  const bd=S.lastBackup?Math.floor((Date.now()-S.lastBackup)/864e5):null;
+  o+=`<div class="card"><div class="row"><div class="grow"><b>Záloha dat</b><p class="sub">${S.history.length?(bd==null?'Ještě jsi nezálohoval.':bd===0?'Zálohováno dnes.':'Poslední záloha před '+bd+' dny.'):'Data zůstávají jen v tomto zařízení.'}</p></div><button class="btn sm" data-a="backup">Otevřít</button></div></div>`;
+  return o}
+function setHead(e,w){return w?`<div class="sethead w"><span></span><span>plán</span><span>${unitHead(e)}</span><span>kg</span><span></span></div>`:`<div class="sethead p"><span></span><span>${unitHead(e)}</span><span>kg</span></div>`}
+function itemCard(it,i,w){const e=ex(it.ex);
+  let o=`<div class="card"><div class="item-h"><button class="nm" data-a="exDetail" data-id="${e.id}">${esc(e.name)}<small>${CATN[e.cat]} · ${EQS[e.eq]} · klepni pro popis</small></button><button class="ic" data-a="mv" data-i="${i}" data-d="-1" aria-label="Posunout nahoru">↑</button><button class="ic" data-a="mv" data-i="${i}" data-d="1" aria-label="Posunout dolů">↓</button><button class="ic" data-a="delItem" data-i="${i}" aria-label="Odebrat cvik">✕</button></div><div class="sets">${setHead(e,w)}`;
+  it.sets.forEach((s,j)=>{const inp=k=>`<input class="num" inputmode="decimal" autocomplete="off" id="s${i}_${j}_${k}" aria-label="${k==='r'?unitHead(e):'kilogramy'}" data-in="set" data-i="${i}" data-s="${j}" data-k="${k}" value="${fN(s[k])}">`;
+    o+=w?`<div class="set w ${s.done?'done':''}"><span class="n">${j+1}</span><span class="pl">${s.pr==null?'navíc':esc(fSet(s.pr,s.pw,e))}</span>${inp('r')}${inp('w')}<button class="chk" data-a="done" data-i="${i}" data-s="${j}" aria-label="Odcvičeno" aria-pressed="${!!s.done}">✓</button></div>`
+        :`<div class="set p"><span class="n">${j+1}</span>${inp('r')}${inp('w')}</div>`});
+  return o+`</div><div class="row"><button class="btn sm grow" data-a="addSet" data-i="${i}">+ série</button><button class="btn sm grow ghost" data-a="delSet" data-i="${i}" ${it.sets.length<2?'disabled':''}>− série</button></div></div>`}
+function vWork(){const a=S.active,[d,t]=count(a),w=WARM[a.warm]||WARM[0];
+  const rs=a.restEnd?(a.restEnd>Date.now()?'':'go'):'idle';
+  let o=`<div class="wh"><div class="row"><div class="grow"><div class="eyebrow">${esc(a.name)}</div><div id="timer">${fDur(Date.now()-a.start)}</div></div><button class="btn hot" data-a="finish">Dokončit</button></div><div class="bar"><i style="width:${t?d/t*100:0}%"></i></div><div class="row"><span class="sub grow">${d} z ${t} sérií hotovo</span></div><div id="rest" class="rest ${rs}"><span>${rs==='idle'?'Pauza ('+S.rest+' s) se spustí po odškrtnutí série.':'Pauza'}</span><b>${rs==='go'?'Jdi na to':a.restEnd?fDur(a.restEnd-Date.now()):''}</b><span class="grow"></span><button class="btn" data-a="rest" data-d="-15">−15 s</button><button class="btn" data-a="rest" data-d="15">+15 s</button><button class="btn" data-a="rest" data-d="0">Přeskočit</button></div></div>`;
+  o+=`<div class="card warm ${a.warmDone?'done':''}"><div class="row"><div class="grow"><div class="eyebrow">Rozcvička</div><h2>${w[0]}</h2></div><button class="chk" style="width:44px;${a.warmDone?'background:var(--ok);color:#04231a;border-color:var(--ok)':''}" data-a="warmDone" aria-label="Rozcvička hotová">✓</button></div>${a.warmDone?'':`<ol>${w[1].map(x=>`<li>${x}</li>`).join('')}</ol><p class="note">Potom si dej jednu až dvě lehké zahřívací série prvního cviku.</p><button class="btn sm" data-a="warmNext">Jiná rozcvička</button>`}</div>`;
+  if(!a.items.length)o+='<p class="empty">Zatím tu není žádný cvik. Přidej první.</p>';
+  a.items.forEach((it,i)=>o+=itemCard(it,i,true));
+  o+=`<button class="btn vio" data-a="pick" data-k="work">+ Přidat cvik</button><button class="btn bad" data-a="cancelWork">Zrušit trénink bez uložení</button>`;
+  return o}
+function vPlans(){let o=head('Plány','Tréninkové plány','Plán je seznam cviků se sériemi, opakováními a váhou. Kdykoli ho můžeš změnit.');
+  if(!S.plans.length)o+='<p class="empty">Žádný plán. Vytvoř si první.</p>';
+  S.plans.forEach(p=>{o+=`<div class="card"><h2>${esc(p.name||'Plán bez názvu')}</h2><p class="sub">${p.items.map(i=>esc(ex(i.ex).name)).join(' · ')||'Zatím bez cviků'}</p><div class="row wrap"><button class="btn sm vio grow" data-a="editPlan" data-id="${p.id}">Upravit</button><button class="btn sm grow" data-a="dupPlan" data-id="${p.id}">Duplikovat</button><button class="btn sm hot grow" data-a="start" data-id="${p.id}">Start</button></div></div>`});
+  return o+`<button class="btn vio" data-a="newPlan">+ Nový plán</button>`}
+function vPlanEdit(){const p=curPlan();
+  let o=`<button class="btn sm ghost" style="align-self:flex-start" data-a="backPlans">‹ Všechny plány</button><label class="q"><span class="eyebrow">Název plánu</span><input class="txt" id="pname" data-in="pname" value="${esc(p.name)}" placeholder="Například Celé tělo A"></label>`;
+  if(!p.items.length)o+='<p class="empty">Přidej první cvik. Hodnoty můžeš kdykoli přepsat.</p>';
+  p.items.forEach((it,i)=>o+=itemCard(it,i,false));
+  o+=`<button class="btn vio" data-a="pick" data-k="plan">+ Přidat cvik</button><button class="btn hot" data-a="start" data-id="${p.id}">Spustit trénink podle plánu</button><button class="btn bad" data-a="delPlan">Smazat plán</button><p class="note">Změny se ukládají průběžně.</p>`;
+  return o}
+function filters(){const f=ui.lib;return `<input class="txt" id="libq" data-in="libq" type="search" placeholder="Hledat cvik" value="${esc(f.q)}" aria-label="Hledat cvik"><div class="chips"><button class="chip hoton ${f.top?'on':''}" data-a="fTop">Nejúčinnější</button>${Object.keys(EQS).map(k=>`<button class="chip ${f.eq===k?'on':''}" data-a="fEq" data-v="${k}">${EQS[k]}</button>`).join('')}</div><div class="chips"><button class="chip ${f.cat?'':'on'}" data-a="fCat" data-v="">Vše</button>${CATS.map(c=>`<button class="chip ${f.cat===c[0]?'on':''}" data-a="fCat" data-v="${c[0]}">${c[1]}</button>`).join('')}</div>`}
+function libList(){const f=ui.lib,q=norm(f.q);let o='';
+  CATS.forEach(c=>{if(f.cat&&f.cat!==c[0])return;const l=allEx().filter(e=>e.cat===c[0]&&(!f.eq||e.eq===f.eq)&&(!f.top||isTop(e))&&(!q||norm(e.name).includes(q)));if(!l.length)return;
+    l.sort((a,b)=>(isTop(b)?1:0)-(isTop(a)?1:0));
+    o+=`<h3 class="cat">${c[1]}<span>${l.length}</span></h3>`+l.map(e=>`<div class="ex"><button class="ex-main" data-a="exDetail" data-id="${e.id}"><b>${esc(e.name)}</b><span class="tags"><i class="eq${e.eq}">${EQS[e.eq]}</i>${isTop(e)?'<i class="top">nejúčinnější</i>':''}</span></button>${ui.pick?`<button class="add" data-a="pickAdd" data-id="${e.id}" aria-label="Přidat ${esc(e.name)}">+</button>`:''}</div>`).join('')});
+  return o||'<p class="empty">Filtru neodpovídá žádný cvik.</p>'}
+function vLib(){return head('Cviky',allEx().length+' cviků','Seřazeno podle svalů. Klepnutím otevřeš provedení a zapojené svaly.')+filters()+`<div id="liblist">${libList()}</div><button class="btn" data-a="newEx">+ Přidat vlastní cvik</button>`}
+function shPick(){return `<div class="row"><h2 class="grow">Přidat cvik</h2><button class="btn sm hot" data-a="closeSheet">Hotovo</button></div>${filters()}<div id="liblist">${libList()}</div>`}
+function shEx(id){const e=ex(id),lp=lastPerf(id);let best=0;S.history.forEach(h=>h.items.forEach(i=>{if(i.ex===id)i.sets.forEach(s=>{if(s.done&&+s.w>best)best=+s.w})}));
+  return `<div class="row"><h2 class="grow">${esc(e.name)}</h2><button class="btn sm" data-a="closeSheet">Zavřít</button></div><div class="tags"><i>${CATN[e.cat]}</i><i class="eq${e.eq}">${EQS[e.eq]}</i>${isTop(e)?'<i class="top">nejúčinnější</i>':''}</div>${muscleMap(e)}${e.how?`<p class="how">${esc(e.how)}</p>`:'<p class="sub">Vlastní cvik bez popisu.</p>'}${e.err?`<div class="errbox"><b>Častá chyba:</b> ${esc(e.err)}</div>`:''}${lp?`<div class="card"><span class="eyebrow">Naposledy ${fDate(lp.h.start)}</span><p>${lp.sets.map(s=>fSet(s.r,s.w,e)).join(' · ')}</p>${best?`<p class="sub">Nejtěžší odcvičená váha: ${fN(best)} kg</p>`:''}</div>`:''}<a class="btn" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent(e.name+' technika provedení')}">Najít video s ukázkou</a>${ui.pick?`<button class="btn vio" data-a="pickAdd" data-id="${e.id}">+ Přidat tento cvik</button>`:''}${S.custom.includes(e)?`<button class="btn bad" data-a="delEx" data-id="${e.id}">Smazat vlastní cvik</button>`:''}`}
+function vHist(){let o=head('Historie',S.history.length?S.history.length+' tréninků':'Historie','U každého tréninku vidíš, co bylo v plánu a co jsi opravdu odcvičil.');
+  if(!S.history.length)return o+'<p class="empty">Po prvním dokončeném tréninku se tu objeví záznam.</p>';
+  let m='';S.history.forEach(h=>{const mm=new Date(h.start).toLocaleDateString('cs-CZ',{month:'long',year:'numeric'});if(mm!==m){m=mm;o+=`<div class="month">${mm}</div>`}
+    const [d,t]=count(h),v=volume(h);o+=`<button class="card" data-a="hist" data-id="${h.id}"><div class="row"><div class="grow"><h2>${esc(h.name)}</h2><p class="sub">${fDate(h.start)} · ${fDur(h.end-h.start)}</p></div><span class="pill ${d===t?'ok':d?'warn':'bad'}">${d}/${t} sérií</span></div>${v?`<p class="sub">Zvednuto celkem ${v.toLocaleString('cs-CZ')} kg</p>`:''}</button>`});
+  return o}
+function setStatus(s){if(!s.done)return['bad','vynecháno'];if(s.pr==null)return['vio','navíc'];const a=(+s.r||0)*(Math.max(+s.w,0)||1),b=(+s.pr||0)*(Math.max(+s.pw,0)||1);if(+s.r===+s.pr&&+s.w===+s.pw)return['ok','podle plánu'];if(+s.r>=+s.pr&&+s.w>=+s.pw)return['ok','nad plán'];if(a>=b)return['ok','splněno jinak'];return['warn','pod plán']}
+function vHistDetail(){const h=S.history.find(x=>x.id===ui.histId),[d,t]=count(h);let pl=0,ok=0;h.items.forEach(i=>i.sets.forEach(s=>{if(s.pr!=null){pl++;if(s.done&&setStatus(s)[0]==='ok')ok++}}));
+  let o=`<button class="btn sm ghost" style="align-self:flex-start" data-a="backHist">‹ Historie</button>`+head(fDate(h.start),esc(h.name));
+  o+=`<div class="stats"><div class="stat"><b>${fDur(h.end-h.start)}</b><span>čas</span></div><div class="stat"><b>${d}/${t}</b><span>odcvičené série</span></div><div class="stat"><b>${pl?ok+'/'+pl:'–'}</b><span>plán splněn</span></div></div>`;
+  if(h.warm)o+=`<p class="sub">Rozcvička: ${esc(h.warm)}</p>`;
+  h.items.forEach(it=>{const e=ex(it.ex);o+=`<div class="card"><h2>${esc(e.name)}</h2><div><div class="hrow head"><span></span><span>plán</span><span>skutečnost</span><span></span></div>${it.sets.map((s,j)=>{const st=setStatus(s);return `<div class="hrow"><span class="n">${j+1}</span><span>${s.pr==null?'–':esc(fSet(s.pr,s.pw,e))}</span><span>${s.done?esc(fSet(s.r,s.w,e)):'–'}</span><span class="pill ${st[0]}">${st[1]}</span></div>`}).join('')}</div></div>`});
+  return o+`<button class="btn bad" data-a="delHist">Smazat tento záznam</button>`}
+/* ---------- guide ---------- */
+const GQ=[['goal','Čeho chceš dosáhnout?',[['hubnuti','Zhubnout'],['svaly','Nabrat svaly'],['sila','Být silnější'],['kondice','Kondice a zdraví']]],
+['lvl','Jak dlouho pravidelně cvičíš?',[['zac','Začínám nebo méně než půl roku'],['pok','Půl roku až dva roky'],['zku','Déle než dva roky']]],
+['days','Kolikrát týdně můžeš cvičit?',[['2','2×'],['3','3×'],['4','4×'],['5','5× a víc']]],
+['time','Kolik času máš na jeden trénink?',[['30','30 minut'],['45','45 minut'],['60','60 minut'],['90','90 minut']]],
+['place','Kde budeš cvičit?',[['gym','V posilovně'],['doma_n','Doma s činkami nebo gumami'],['doma_v','Doma jen s vlastní vahou']]],
+['lim','Trápí tě něco? Můžeš vybrat víc možností.',[['zada','Záda'],['kolena','Kolena'],['ramena','Ramena']]]];
+function vGuide(){if(S.guide&&!ui.gq)return guideOut(S.guide);
+  const a=ui.gq||(ui.gq={lim:[]});const ready=GQ.slice(0,5).every(q=>a[q[0]]);
+  return head('Návod','Jak si sestavit plán','Odpověz na šest otázek. Dostaneš návod na míru, podle kterého si plán poskládáš sám.')+GQ.map((q,i)=>`<div class="card q"><span class="eyebrow">Otázka ${i+1} z ${GQ.length}</span><b>${q[1]}</b><div class="opts">${q[2].map(o=>`<button class="chip ${(q[0]==='lim'?a.lim.includes(o[0]):a[q[0]]===o[0])?'on':''}" data-a="gq" data-k="${q[0]}" data-v="${o[0]}">${o[1]}</button>`).join('')}</div></div>`).join('')+`<button class="btn hot" data-a="gqGo" ${ready?'':'disabled'}>Sestavit návod</button>${S.guide?'<button class="btn ghost" data-a="gqCancel">Zpět k mému návodu</button>':''}`}
+function guideOut(a){
+  const days=+a.days,time=+a.time,zac=a.lvl==='zac';
+  const G={hubnuti:['Hubnutí','8–15','60–90 s'],svaly:['Nabírání svalů','6–12, u izolovaných cviků 10–15','1,5–2,5 min'],sila:['Síla','3–6 u hlavních cviků, 6–10 u doplňkových','3–5 min u hlavních cviků, 2 min u ostatních'],kondice:['Kondice a zdraví','10–15','45–75 s']}[a.goal];
+  const nEx={30:[3,4],45:[4,5],60:[5,6],90:[6,8]}[time];
+  const setsPer=zac?'2–3':'3–4';
+  const wk=a.goal==='sila'?(zac?'5–8':'8–12'):zac?'6–10':a.lvl==='pok'?'10–14':'12–20';
+  const FULL=['Dřepový pohyb na přední stehna','Tlak na hrudník','Tah na záda','Ohyb v kyčli na zadní stehna a hýždě','Ramena','Střed těla','Paže: biceps nebo triceps','Lýtka'];
+  const UP=['Tlak na hrudník','Přítahy na záda vodorovně','Tlak na ramena','Tah na záda shora: shyby nebo stahování kladky','Biceps','Triceps','Zadní ramena nebo upažování','Předloktí'];
+  const LOW=['Dřepový pohyb','Ohyb v kyčli: rumunský tah nebo hip thrust','Jednonožný cvik: výpady nebo bulharský dřep','Zadní stehna izolovaně','Lýtka','Střed těla','Hýždě izolovaně','Střed těla s rotací'];
+  const PUSH=['Tlak na hrudník','Tlak na ramena','Hrudník z jiného úhlu','Upažování','Triceps','Triceps podruhé','Střed těla','Lýtka'];
+  const PULL=['Tah na záda shora','Přítahy na záda vodorovně','Zadní ramena','Biceps','Biceps kladivovým úchopem','Předloktí','Spodní záda','Střed těla'];
+  let split,daysL,note='';
+  if(days<=3){split='Celé tělo na každém tréninku';daysL=days===2?[['Trénink A',FULL],['Trénink B',FULL]]:[['Trénink A',FULL],['Trénink B',FULL],['Trénink A nebo C',FULL]];note='V tréninku B vyber na stejné pozice jiné cviky než v A. Mezi tréninky si nech aspoň jeden den volna.'}
+  else if(days===4||zac){split='Horní a dolní polovina těla';daysL=[['Horní A',UP],['Dolní A',LOW],['Horní B',UP],['Dolní B',LOW]];note=(days===5&&zac?'Jako začátečník z pěti tréninků týdně nevytěžíš víc než ze čtyř dobře odvedených. Pátý den věnuj chůzi, kolu nebo plavání. ':'')+'Dva dny po sobě, den volna, dva dny po sobě. Ve variantě B vyměň aspoň polovinu cviků.'}
+  else{split='Tlaky, tahy, nohy a k tomu horní a dolní den';daysL=[['Tlaky',PUSH],['Tahy',PULL],['Nohy',LOW],['Horní',UP],['Dolní',LOW]];note='Každou svalovou skupinu tak procvičíš dvakrát týdně. Po třech dnech si dej den volna.'}
+  const eqTxt={gym:'V knihovně cviků si zapni filtr <b>stroj / kladka</b> nebo <b>činky a náčiní</b>. Základ postav na volných vahách nebo strojích s velkou zátěží, izolované cviky doplň na kladkách.',doma_n:'V knihovně cviků si zapni filtr <b>činky a náčiní</b> a doplň ho cviky s <b>vlastní vahou</b>. S jednoručkami a gumou procvičíš celé tělo, jen místo přidávání kil budeš časem přidávat opakování.',doma_v:'V knihovně cviků si zapni filtr <b>vlastní váha</b>. Zátěž nezvyšuješ kotouči, ale těžší variantou: nohy výš, cvik na jedné noze nebo ruce, pomalejší spouštění na 3–4 vteřiny, pauza v dolní poloze.'}[a.place];
+  const goalTxt={
+   hubnuti:['O hubnutí rozhoduje jídlo: potřebuješ sníst zhruba o 300–500 kcal denně méně, než vydáš. Trénink se zátěží je tu od toho, abys při hubnutí neztrácel svaly.','Cvič stejně poctivě jako někdo, kdo nabírá. Lehké váhy a desítky opakování tuk nespálí lépe.','Jez 1,6–2,2 g bílkovin na kilogram váhy denně.','Přidej pohyb mimo trénink: 8–10 tisíc kroků denně a jednou až dvakrát týdně 20–30 minut kardia z kategorie Celé tělo a kondice.','Rozumné tempo je půl až jedno procento tělesné váhy týdně. Rychlejší úbytek bere i svaly.'],
+   svaly:['Svaly rostou, když je opakovaně zatížíš blízko jejich hranice a pak jim dáš jídlo a spánek.','Jez mírně nad svou spotřebu, asi o 200–300 kcal denně, a 1,6–2,2 g bílkovin na kilogram váhy.','Každou sérii ukonči ve chvíli, kdy bys zvládl už jen jedno až tři další opakování.','Spi 7–9 hodin. Bez spánku se objem tréninku neprojeví.','Kardio nevynechávej úplně, dvě kratší klidné jednotky týdně růstu neublíží.'],
+   sila:['Síla je dovednost: méně cviků, těžší váhy, čistá technika a dlouhé pauzy.','Každý trénink začni jedním až dvěma hlavními cviky: dřep, mrtvý tah, bench press, tlak nad hlavu, shyby nebo přítahy.','U hlavních cviků si nech jedno až dvě opakování v rezervě. Do selhání nechoď.','Doplňkové cviky ber jako stavbu svalů, které hlavním cvikům pomáhají.','Jez aspoň tolik, kolik vydáš. V deficitu síla roste pomalu.'],
+   kondice:['Cílem je cítit se dobře a vydržet. Spoj posilování celého těla s pohybem, který zvedne tep.','Dospělým se doporučuje aspoň 150 minut středně náročného pohybu týdně a k tomu dvakrát týdně posilování. Tvůj plán pokryje obojí.','Cviky můžeš řadit do dvojic nebo do kruhu a zkrátit tak pauzy.','Na konec tréninku zařaď 5–10 minut z kategorie Celé tělo a kondice.','Pravidelnost má větší cenu než náročnost. Raději kratší trénink, který nevynecháš.']}[a.goal];
+  const lim=[];
+  if(a.lim.includes('zada'))lim.push('<b>Záda:</b> začni cviky s oporou trupu, jako je veslování na stroji, leg press nebo tlaky vsedě. Těžké předklony s osou přidej až po zvládnutí techniky s lehkou vahou. Do každého tréninku dej plank nebo mrtvého brouka.');
+  if(a.lim.includes('kolena'))lim.push('<b>Kolena:</b> dřepuj jen do hloubky bez bolesti a drž kolena ve směru špiček. Dobře se snáší leg press, most, hip thrust, výpady vzad a zakopávání. Výskoky a angličáky zatím vynech.');
+  if(a.lim.includes('ramena'))lim.push('<b>Ramena:</b> tlač raději s jednoručkami a s lokty mírně před tělem, nespouštěj nic za hlavu. Na každý tlakový cvik zařaď jeden tahový a přidej face pull nebo reverzní peck deck.');
+  let o=head('Návod na míru',G[0],'Sestaveno z tvých odpovědí. Plán si podle něj poskládáš sám v záložce Plány.')+'<div class="g" style="display:flex;flex-direction:column;gap:14px">';
+  o+=`<div class="card glow"><span class="eyebrow">Rozdělení týdne</span><p class="big">${split}</p><p class="sub">${days>=5?'5':days} tréninků týdně po ${time} minutách</p><p>${note}</p></div>`;
+  o+=`<div class="kv"><div><span>Cviků na trénink</span><b>${nEx[0]}–${nEx[1]}</b></div><div><span>Sérií na cvik</span><b>${setsPer}</b></div><div><span>Opakování</span><b>${G[1]}</b></div><div><span>Pauza mezi sériemi</span><b>${G[2]}</b></div><div style="grid-column:1/-1"><span>Sérií na svalovou skupinu za týden</span><b>${wk}</b></div></div>`;
+  o+=`<div class="card"><h2>Kostra tréninků</h2><p class="sub">Na každou pozici vyber jeden cvik. Těžké cviky na víc kloubů patří na začátek, izolované na konec.</p>${daysL.map(d=>`<div class="day"><b>${d[0]}</b><ol>${d[1].slice(0,nEx[1]).map(x=>`<li>${x}</li>`).join('')}</ol></div>`).join('')}${time===30?'<p class="note">Na 30 minut spoj cviky do dvojic, které si nepřekážejí, třeba tlak a tah, a střídej je bez pauzy.</p>':''}</div>`;
+  o+=`<div class="card"><h2>Co rozhoduje u tvého cíle</h2><ul>${goalTxt.map(x=>`<li>${x}</li>`).join('')}</ul></div>`;
+  o+=`<div class="card"><h2>Jak vybírat cviky</h2><p>${eqTxt}</p><p>Začni s filtrem <b>Nejúčinnější</b>. V každé kategorii najdeš osvědčené cviky pro stroje, vlastní váhu i náčiní.</p><button class="btn sm vio" data-a="goTop">Zobrazit nejúčinnější cviky</button></div>`;
+  o+=`<div class="card"><h2>Jak přidávat</h2><ul><li>Zvol váhu, se kterou splníš spodní hranici opakování s jedním až třemi opakováními v rezervě.</li><li>Každý trénink se snaž přidat opakování. Jakmile ve všech sériích dosáhneš horní hranice, zvyš váhu o nejmenší možný krok, asi 2,5–5 %, a začni znovu od spodní hranice.</li><li>${zac?'První dva až tři týdny ber lehčí váhy a hlídej techniku. Popis najdeš u každého cviku.':'Když se čtyři týdny nikam neposuneš, vyměň cvik za podobný nebo týden uber třetinu sérií.'}</li><li>Po 6–8 týdnech plán projdi a uprav. V historii uvidíš, kde jsi plnil plán a kde ne.</li></ul></div>`;
+  if(lim.length)o+=`<div class="card"><h2>Na co si dát pozor</h2><ul>${lim.map(x=>`<li>${x}</li>`).join('')}</ul><p class="note">Ostrá nebo přetrvávající bolest patří k lékaři nebo fyzioterapeutovi, ne do tréninku.</p></div>`;
+  o+=`<div class="card"><h2>Postup v deníku</h2><ol><li>V záložce Plány založ pro každý tréninkový den jeden plán a pojmenuj ho podle kostry výše.</li><li>Přes Přidat cvik vyber na každou pozici jeden cvik.</li><li>U každého cviku nastav počet sérií a opakování podle tabulky. Váhu zatím odhadni.</li><li>Na prvním tréninku přepiš váhy podle skutečnosti a při dokončení nech plán přepsat odcvičenými hodnotami.</li></ol><button class="btn hot" data-a="newPlan">Založit první plán</button></div>`;
+  return o+`</div><button class="btn ghost" data-a="gqRedo">Vyplnit dotazník znovu</button>`}
+/* ---------- backup ---------- */
+function shBackup(){return `<div class="row"><h2 class="grow">Záloha dat</h2><button class="btn sm" data-a="closeSheet">Zavřít</button></div><p class="sub">Plány i historie jsou uložené jen v tomto zařízení, a to dvakrát vedle sebe. Občas si ulož zálohu do Souborů nebo iCloudu pro případ ztráty telefonu nebo smazání dat webu.</p><button class="btn vio" data-a="export">Uložit zálohu do souboru</button><button class="btn" data-a="copyData">Zkopírovat zálohu jako text</button><button class="btn" data-a="importFile">Obnovit ze souboru</button><label class="q"><span class="eyebrow">Obnovit z textu</span><textarea class="txt" id="paste" placeholder="Sem vlož text zálohy"></textarea></label><button class="btn" data-a="importPaste">Obnovit z vloženého textu</button><button class="btn bad" data-a="wipe">Smazat všechna data</button>`}
+function doImport(txt){let o;try{o=JSON.parse(txt)}catch(e){return toast('Tohle není platná záloha.')}
+  if(!o||!Array.isArray(o.plans)||!Array.isArray(o.history))return toast('Tohle není platná záloha.');
+  ask('Nahradit současná data zálohou? ('+o.plans.length+' plánů, '+o.history.length+' tréninků)','Nahradit',()=>{adopt(o);save();sheets.length=0;renderSheet();ui.tab='dnes';render();toast('Data obnovena.')})}
+function shNewEx(){return `<h2>Vlastní cvik</h2><input class="txt" id="nx-name" placeholder="Název cviku" aria-label="Název cviku"><select class="txt" id="nx-cat" aria-label="Svalová skupina">${CATS.map(c=>`<option value="${c[0]}">${c[1]}</option>`).join('')}</select><select class="txt" id="nx-eq" aria-label="Vybavení">${Object.keys(EQS).map(k=>`<option value="${k}">${EQS[k]}</option>`).join('')}</select><select class="txt" id="nx-u" aria-label="Jednotka"><option value="">Počítám opakování</option><option value="t">Počítám sekundy</option><option value="m">Počítám minuty</option></select><textarea class="txt" id="nx-how" placeholder="Poznámka k provedení (nepovinné)"></textarea><button class="btn vio" data-a="saveEx">Uložit cvik</button><button class="btn ghost" data-a="closeSheet">Zpět</button>`}
+/* ---------- actions ---------- */
+const A={
+ tab(d){ui.tab=d.t;if(d.t==='plany')ui.planId=null;if(d.t==='historie')ui.histId=null;ui.gq=null;render();window.scrollTo(0,0)},
+ closeSheet(){closeSheet()},
+ askOk(){const c=askCb;askCb=null;sheets.pop();renderSheet();if(c)c();render()},
+ start(d){const go=()=>{const p=S.plans.find(x=>x.id===d.id);
+   S.active={id:uid(),planId:p?p.id:null,name:p?(p.name||'Plán bez názvu'):'Volný trénink',start:Date.now(),warm:pickWarm(),warmDone:false,restEnd:0,items:p?p.items.map(it=>({ex:it.ex,sets:it.sets.map(s=>({pr:s.r,pw:s.w,r:s.r,w:s.w,done:false}))})):[]};
+   save();ui.tab='dnes';render();window.scrollTo(0,0);wake()};
+   if(S.active)ask('Už jeden trénink běží. Zahodit ho a začít nový?','Začít nový',go);else go()},
+ warmDone(){S.active.warmDone=!S.active.warmDone;save();render()},
+ warmNext(){S.active.warm=pickWarm();save();render()},
+ done(d){const s=S.active.items[+d.i].sets[+d.s];s.done=!s.done;S.active.restEnd=s.done?Date.now()+S.rest*1000:0;save();render()},
+ rest(d){const a=S.active,n=+d.d;if(!n){a.restEnd=0}else{S.rest=Math.max(15,S.rest+n);if(a.restEnd>Date.now())a.restEnd=Math.max(Date.now(),a.restEnd+n*1000)}save();render()},
+ addSet(d){const it=ctxItems()[+d.i],l=it.sets[it.sets.length-1]||{r:10,w:0};it.sets.push(ui.tab==='plany'?{r:l.r,w:l.w}:{pr:null,pw:null,r:l.r,w:l.w,done:false});save();render()},
+ delSet(d){const it=ctxItems()[+d.i];if(it.sets.length>1){it.sets.pop();save();render()}},
+ delItem(d){const l=ctxItems();ask('Odebrat cvik '+ex(l[+d.i].ex).name+'?','Odebrat',()=>{l.splice(+d.i,1);save()})},
+ mv(d){const l=ctxItems(),i=+d.i,j=i+ +d.d;if(j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];save();render()},
+ pick(d){ui.pick={kind:d.k};openSheet(shPick)},
+ pickAdd(d){const sets=defSets(d.id);if(ui.pick.kind==='plan'){const p=curPlan();if(!p)return;p.items.push({ex:d.id,sets})}else S.active.items.push({ex:d.id,sets:sets.map(s=>({pr:null,pw:null,r:s.r,w:s.w,done:false}))});save();toast('Přidáno: '+ex(d.id).name);if(sheets.length>1){sheets.pop();renderSheet()}},
+ exDetail(d){const id=d.id;openSheet(()=>shEx(id))},
+ fTop(){ui.lib.top=!ui.lib.top;refresh()},
+ fEq(d){ui.lib.eq=ui.lib.eq===d.v?'':d.v;refresh()},
+ fCat(d){ui.lib.cat=d.v;refresh()},
+ finish(){openSheet(()=>{const a=S.active,[d,t]=count(a),p=S.plans.find(x=>x.id===a.planId);return `<h2>Dokončit trénink?</h2><p>Čas ${fDur(Date.now()-a.start)}, odškrtnuto ${d} z ${t} sérií.</p>${t-d?'<p class="note">Neodškrtnuté série se uloží jako vynechané.</p>':''}${p&&d?'<label class="chkrow"><input type="checkbox" id="upd"> Přepsat plán tím, co jsem dnes odcvičil</label>':''}<button class="btn hot" data-a="finishGo">Uložit do historie</button><button class="btn ghost" data-a="closeSheet">Ještě cvičím</button>`})},
+ finishGo(){const a=S.active,u=$('#upd'),p=S.plans.find(x=>x.id===a.planId);
+   if(u&&u.checked&&p)p.items=a.items.map(it=>({ex:it.ex,sets:it.sets.filter(s=>s.done).map(s=>({r:s.r,w:s.w}))})).filter(it=>it.sets.length);
+   const h={id:a.id,planId:a.planId,name:a.name,start:a.start,end:Date.now(),warm:a.warmDone?(WARM[a.warm]||WARM[0])[0]:'',items:a.items};
+   S.history.unshift(h);S.active=null;save();unwake();sheets.length=0;renderSheet();ui.tab='historie';ui.histId=h.id;render();window.scrollTo(0,0);toast('Trénink uložen.')},
+ cancelWork(){ask('Zrušit trénink? Nic z něj se neuloží.','Zrušit trénink',()=>{S.active=null;save();unwake()})},
+ newPlan(){const p={id:uid(),name:'',items:[]};S.plans.push(p);save();ui.tab='plany';ui.planId=p.id;render();window.scrollTo(0,0)},
+ editPlan(d){ui.planId=d.id;render();window.scrollTo(0,0)},
+ dupPlan(d){const p=S.plans.find(x=>x.id===d.id),c=JSON.parse(JSON.stringify(p));c.id=uid();c.name=(p.name||'Plán')+' – kopie';S.plans.push(c);save();render()},
+ delPlan(){ask('Smazat tento plán? Historie tréninků zůstane.','Smazat plán',()=>{S.plans=S.plans.filter(p=>p.id!==ui.planId);ui.planId=null;save()})},
+ backPlans(){ui.planId=null;render()},
+ hist(d){ui.histId=d.id;render();window.scrollTo(0,0)},
+ backHist(){ui.histId=null;render()},
+ delHist(){ask('Smazat tento záznam z historie?','Smazat',()=>{S.history=S.history.filter(h=>h.id!==ui.histId);ui.histId=null;save()})},
+ gq(d){const a=ui.gq;if(d.k==='lim'){const i=a.lim.indexOf(d.v);i<0?a.lim.push(d.v):a.lim.splice(i,1)}else a[d.k]=d.v;render()},
+ gqGo(){S.guide=ui.gq;ui.gq=null;save();render();window.scrollTo(0,0)},
+ gqRedo(){ui.gq=JSON.parse(JSON.stringify(S.guide));render();window.scrollTo(0,0)},
+ gqCancel(){ui.gq=null;render()},
+ goTop(){ui.lib={q:'',cat:'',eq:'',top:true};ui.tab='cviky';render();window.scrollTo(0,0)},
+ newEx(){openSheet(shNewEx)},
+ saveEx(){const n=$('#nx-name').value.trim();if(!n)return toast('Napiš název cviku.');S.custom.push({id:'u'+uid(),name:n,cat:$('#nx-cat').value,eq:$('#nx-eq').value,fl:$('#nx-u').value,mus:'',how:$('#nx-how').value.trim(),err:''});save();closeSheet();toast('Cvik uložen.')},
+ delEx(d){ask('Smazat vlastní cvik? V plánech a historii zůstane jako smazaný.','Smazat',()=>{S.custom=S.custom.filter(c=>c.id!==d.id);sheets.length=0;save()})},
+ backup(){openSheet(shBackup)},
+ async export(){const j=JSON.stringify(S),n='trenink-zaloha-'+new Date().toISOString().slice(0,10)+'.json';S.lastBackup=Date.now();save();
+   try{const f=new File([j],n,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return}}catch(e){if(e&&e.name==='AbortError')return}
+   try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));a.download=n;document.body.appendChild(a);a.click();a.remove();toast('Záloha uložena.')}catch(e){toast('Uložení se nepovedlo, zkus zkopírovat text.')}},
+ async copyData(){try{await navigator.clipboard.writeText(JSON.stringify(S));S.lastBackup=Date.now();save();toast('Zkopírováno. Vlož si text do Poznámek.')}catch(e){toast('Kopírování se nepovedlo.')}},
+ importFile(){$('#file').click()},
+ importPaste(){doImport($('#paste').value)},
+ wipe(){ask('Opravdu smazat všechny plány a celou historii? Nejde to vrátit.','Smazat vše',()=>{S=DEF();save();sheets.length=0;ui.tab='dnes'})}
+};
+function refresh(){render();renderSheet()}
+/* wake lock keeps the screen on during a workout where supported */
+let wl=null;
+async function wake(){try{if(S.active&&navigator.wakeLock&&document.visibilityState==='visible')wl=await navigator.wakeLock.request('screen')}catch(e){}}
+function unwake(){try{if(wl)wl.release()}catch(e){}wl=null}
+function tick(){const a=S.active;if(!a)return;const t=$('#timer');if(t)t.textContent=fDur(Date.now()-a.start);const r=$('#rest');if(r&&a.restEnd){const b=r.querySelector('b'),l=a.restEnd-Date.now();if(l>0){b.textContent=fDur(l)}else if(!r.classList.contains('go')){r.classList.add('go');b.textContent='Jdi na to'}}}
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-a]');if(!el)return;const f=A[el.dataset.a];if(f)f(el.dataset,el)});
+document.addEventListener('input',e=>{const t=e.target,d=t.dataset||{};
+  if(d.in==='set'){const it=ctxItems()[+d.i];if(!it||!it.sets[+d.s])return;const v=parseFloat(String(t.value).replace(',','.'));it.sets[+d.s][d.k]=isFinite(v)&&v>=0?v:0;saveSoon()}
+  else if(d.in==='libq'){ui.lib.q=t.value;const l=$('#liblist');if(l)l.innerHTML=libList()}
+  else if(d.in==='pname'){const p=curPlan();if(p){p.name=t.value;saveSoon()}}});
+document.addEventListener('focusin',e=>{if(e.target.classList&&e.target.classList.contains('num'))try{e.target.select()}catch(x){}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){wake();tick()}else if(saveT)save()});
+window.addEventListener('pagehide',()=>{if(saveT)save()});
+$('#file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>doImport(String(r.result));r.readAsText(f);e.target.value=''});
+/* ---------- init ---------- */
+(async function(){
+  await idbOpen();let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
+  if(!raw)raw=await idbGet();
+  if(raw){try{adopt(JSON.parse(raw))}catch(e){}}
+  save();render();setInterval(tick,500);wake();
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+  try{if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+})();
+</script>
+</body>
+</html>
